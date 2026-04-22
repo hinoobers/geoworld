@@ -1,0 +1,46 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.content {
+    flex: 1; /* takes remaining space */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.landing-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    width: 400px;
+    height: 300px;
+
+    background-color: black;
+    color: white;
+    border-radius: 15px;
+
+    opacity: 0.9;
+}
+
+.landing-page .buttons{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.landing-page .buttons button {
+    min-width: 140px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: blueviolet;
+    color: white;
+}
