@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const AUTH_STORAGE_KEY = "geoworld-auth";
-const USER_API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api/users";
+const USER_API_BASE_URL = process.env.REACT_APP_API_URL + "/users" || "http://localhost:3000/api/users";
+console.log("Using API base URL:", USER_API_BASE_URL, process.env.REACT_APP_API_URL);
 
 const AuthContext = createContext(null);
 
