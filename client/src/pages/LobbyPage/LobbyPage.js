@@ -56,7 +56,18 @@ const LobbyPage = () => {
     const [mapSort, setMapSort] = useState("plays");
     const [mapPage, setMapPage] = useState(1);
     const [updatingMap, setUpdatingMap] = useState(false);
+    const [selectedRoundTime, setSelectedRoundTime] = useState(0);
     const socketRef = useRef(null);
+
+    const ROUND_TIME_OPTIONS = [
+        { value: 0, label: "No time limit" },
+        { value: 30, label: "30 seconds" },
+        { value: 60, label: "60 seconds" },
+        { value: 180, label: "3 minutes" },
+        { value: 300, label: "5 minutes" },
+    ];
+    const roundTimeLabel = (s) =>
+        ROUND_TIME_OPTIONS.find((o) => o.value === Number(s))?.label || "No time limit";
 
     const identityId = useMemo(() => {
         if (isLoggedIn && user?.id != null) return `user:${user.id}`;
@@ -238,6 +249,7 @@ const LobbyPage = () => {
     const openMapModal = () => {
         if (!amHost) return;
         setSelectedMapId(String(lobby?.map_id || ""));
+        setSelectedRoundTime(Number(lobby?.round_time_seconds) || 0);
         setMapSearch("");
         setMapSort("plays");
         setMapPage(1);
@@ -262,13 +274,16 @@ const LobbyPage = () => {
         setMapsError("");
         try {
             setUpdatingMap(true);
-            const response = await fetch(`${API_BASE_URL}/lobbies/${encodeURIComponent(code)}/map`, {
+            const response = await fetch(`${API_BASE_URL}/lobbies/${encodeURIComponent(code)}/settings`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${activeToken}`,
                 },
-                body: JSON.stringify({ map_id: nextMapId }),
+                body: JSON.stringify({
+                    map_id: nextMapId,
+                    round_time_seconds: Number(selectedRoundTime) || 0,
+                }),
             });
 
             const body = await response.json().catch(() => null);
@@ -425,7 +440,11 @@ const LobbyPage = () => {
                             ? "Drag players between sides, then start when each side has at least one."
                             : "Share the link, pick sides, and wait for the host to start."}
                     </p>
-                    {lobby ? <p className="lobby-map-line">Map: {lobby.map_name || `#${lobby.map_id}`}</p> : null}
+                    {lobby ? (
+                        <p className="lobby-map-line">
+                            Map: {lobby.map_name || `#${lobby.map_id}`} · Round timer: {roundTimeLabel(lobby.round_time_seconds)}
+                        </p>
+                    ) : null}
                     {me ? (
                         <p className="lobby-you">
                             You are <strong>{me.display_name}</strong>{me.is_guest ? " (guest)" : ""}{amHost ? " — host" : ""}
@@ -474,7 +493,7 @@ const LobbyPage = () => {
                                         onClick={openMapModal}
                                         disabled={lobby?.status !== "waiting"}
                                     >
-                                        Change Map
+                                        Edit Settings
                                     </button>
                                     <button
                                         type="button"
@@ -496,8 +515,26 @@ const LobbyPage = () => {
             {showMapModal ? (
                 <div className="lobby-modal-backdrop" onClick={closeMapModal}>
                     <div className="lobby-modal" onClick={(event) => event.stopPropagation()}>
-                        <h2>Change Lobby Map</h2>
-                        <p>Pick a map for this lobby before starting the game.</p>
+                        <h2>Edit Lobby Settings</h2>
+                        <p>Pick a map and choose the round timer before starting the game.</p>
+
+                        <section className="lobby-modal-controls" style={{ marginBottom: 12 }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span>Time between rounds</span>
+                                <select
+                                    value={String(selectedRoundTime)}
+                                    onChange={(event) => setSelectedRoundTime(Number(event.target.value))}
+                                    disabled={updatingMap}
+                                    className="lobby-modal-sort"
+                                >
+                                    {ROUND_TIME_OPTIONS.map((option) => (
+                                        <option key={option.value} value={String(option.value)}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </section>
 
                         <section className="lobby-modal-controls">
                             <input
@@ -582,7 +619,7 @@ const LobbyPage = () => {
                                 onClick={saveLobbyMap}
                                 disabled={updatingMap || !selectedMapId}
                             >
-                                {updatingMap ? "Saving..." : "Save map"}
+                                {updatingMap ? "Saving..." : "Save settings"}
                             </button>
                         </div>
                     </div>

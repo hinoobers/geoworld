@@ -228,6 +228,27 @@ const MultiplayerGamePage = () => {
         });
     };
 
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        const deadline = state?.deadline_ms;
+        if (!deadline || state?.revealed || state?.my_guess) return;
+        const id = setInterval(() => setNow(Date.now()), 500);
+        return () => clearInterval(id);
+    }, [state?.deadline_ms, state?.revealed, state?.my_guess]);
+
+    const timeLeftMs = state?.deadline_ms && !state?.revealed && !state?.my_guess
+        ? Math.max(0, state.deadline_ms - now)
+        : null;
+
+    useEffect(() => {
+        if (timeLeftMs === null) return;
+        if (timeLeftMs > 0) return;
+        if (state?.my_guess || state?.revealed) return;
+        if (!socketRef.current) return;
+        const pin = myPendingGuess || { lat: 0, lng: 0 };
+        socketRef.current.emit("game:submit_guess", { code, lat: pin.lat, lng: pin.lng });
+    }, [timeLeftMs, state?.my_guess, state?.revealed, myPendingGuess, code]);
+
     const leaveGame = async () => {
         if (activeToken) {
             try {
@@ -466,6 +487,11 @@ const MultiplayerGamePage = () => {
                 <p className="play-muted">
                     You are on Side {mySide || "?"} — {myLocked ? "locked in." : "drop a pin when you know it."}
                 </p>
+                {timeLeftMs !== null ? (
+                    <p className="play-muted">
+                        Time left: {Math.floor(timeLeftMs / 60000)}:{String(Math.floor((timeLeftMs % 60000) / 1000)).padStart(2, "0")}
+                    </p>
+                ) : null}
 
                 <div className="mp-scoreboard">
                     <div className={`mp-scoreboard-side ${mySide === "A" ? "is-me" : ""}`}>

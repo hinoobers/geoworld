@@ -52,6 +52,61 @@ function shuffle(values) {
 
 const activeGames = new Map();
 
+let ioRef = null;
+function setIo(io) {
+    ioRef = io;
+}
+
+function broadcastGameState(game) {
+    if (!ioRef) return;
+    const room = ioRef.sockets.adapter.rooms.get(`game:${game.code}`);
+    if (!room) return;
+    for (const socketId of room) {
+        const sock = ioRef.sockets.sockets.get(socketId);
+        const identity = sock?.data?.identity;
+        if (!identity) continue;
+        sock.emit("game:state", serializeStateForIdentity(game, identity.identity_id));
+    }
+}
+
+function clearRoundTimer(game) {
+    if (game.round_timer) {
+        clearTimeout(game.round_timer);
+        game.round_timer = null;
+    }
+}
+
+function armRoundTimer(game) {
+    clearRoundTimer(game);
+    const seconds = Number(game.round_time_seconds) || 0;
+    const round = currentRound(game);
+    if (!round || round.revealed || seconds <= 0) {
+        if (round) round.deadline_ms = null;
+        return;
+    }
+
+    round.deadline_ms = Date.now() + seconds * 1000;
+    game.round_timer = setTimeout(() => forceExpireRound(game), seconds * 1000);
+    if (typeof game.round_timer.unref === "function") game.round_timer.unref();
+}
+
+function forceExpireRound(game) {
+    game.round_timer = null;
+    const round = currentRound(game);
+    if (!round || round.revealed) return;
+
+    for (const [identityId, participant] of Object.entries(game.participants)) {
+        if (round.guesses[identityId]) continue;
+        if (participant.side !== "A" && participant.side !== "B") continue;
+        const preview = round.previews[identityId];
+        const fallback = preview || { lat: 0, lng: 0 };
+        round.guesses[identityId] = { lat: Number(fallback.lat), lng: Number(fallback.lng) };
+    }
+
+    finalizeRoundIfBothSidesDone(game);
+    broadcastGameState(game);
+}
+
 async function createGameFromLobby(lobby, requestedRounds) {
     const positions = await loadMapPositions(lobby.map_id);
     if (positions.length === 0) {
@@ -96,6 +151,7 @@ async function createGameFromLobby(lobby, requestedRounds) {
         code: lobby.code,
         map_id: lobby.map_id,
         host_identity_id: lobby.host_identity_id,
+        round_time_seconds: Number(lobby.round_time_seconds) || 0,
         sides,
         participants,
         rounds,
@@ -104,9 +160,11 @@ async function createGameFromLobby(lobby, requestedRounds) {
         status: "active",
         scores: { A: 0, B: 0 },
         created_at: Date.now(),
+        round_timer: null,
     };
 
     activeGames.set(lobby.code, game);
+    armRoundTimer(game);
     return game;
 }
 
@@ -115,6 +173,8 @@ function getGame(code) {
 }
 
 function deleteGame(code) {
+    const game = activeGames.get(code);
+    if (game) clearRoundTimer(game);
     activeGames.delete(code);
 }
 
@@ -164,6 +224,8 @@ function finalizeRoundIfBothSidesDone(game) {
     }
     round.side_result = result;
     round.revealed = true;
+    round.deadline_ms = null;
+    clearRoundTimer(game);
 
     const isLastRound = game.current_round_index === game.total_rounds - 1;
     if (isLastRound && !game.persisted) {
@@ -254,6 +316,8 @@ function serializeStateForIdentity(game, identityId) {
             A: sideHasAllGuessed(game, round, "A"),
             B: sideHasAllGuessed(game, round, "B"),
         },
+        round_time_seconds: Number(game.round_time_seconds) || 0,
+        deadline_ms: round.deadline_ms || null,
         revealed,
         actual: revealed ? round.actual : null,
         all_guesses: revealed ? round.guesses : null,
@@ -349,6 +413,7 @@ async function persistCompletedGame(game) {
 async function completeGame(game) {
     if (game.status === "completed") return;
     game.status = "completed";
+    clearRoundTimer(game);
     await persistCompletedGame(game);
     lobbyHandler.resetLobbyToWaiting(game.code);
     scheduleCleanup(game);
@@ -383,6 +448,7 @@ async function registerContinue(game, identityId) {
             await completeGame(game);
             return { advanced: true, completed: true };
         }
+        armRoundTimer(game);
         return { advanced: true, completed: false };
     }
 
@@ -390,6 +456,7 @@ async function registerContinue(game, identityId) {
 }
 
 module.exports = {
+    setIo,
     createGameFromLobby,
     getGame,
     deleteGame,

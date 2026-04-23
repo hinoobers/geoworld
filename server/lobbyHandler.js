@@ -36,6 +36,14 @@ function releaseGuestName(name) {
     }
 }
 
+const ALLOWED_ROUND_TIME_SECONDS = new Set([0, 30, 60, 180, 300]);
+
+function normalizeRoundTimeSeconds(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 0;
+    return ALLOWED_ROUND_TIME_SECONDS.has(n) ? n : 0;
+}
+
 function createLobby({ mapId, mapName, host }) {
     const code = generateLobbyCode();
     const hostParticipant = buildParticipant(host, "A");
@@ -44,6 +52,7 @@ function createLobby({ mapId, mapName, host }) {
         code,
         map_id: mapId,
         map_name: mapName || null,
+        round_time_seconds: 0,
         host_identity_id: host.identity_id,
         created_at: Date.now(),
         status: "waiting",
@@ -188,6 +197,7 @@ function serializeLobby(lobby) {
         code: lobby.code,
         map_id: lobby.map_id,
         map_name: lobby.map_name ?? null,
+        round_time_seconds: Number(lobby.round_time_seconds) || 0,
         host_identity_id: lobby.host_identity_id,
         status: lobby.status,
         game_id: lobby.game_id,
@@ -238,4 +248,6 @@ module.exports = {
     identityFromToken,
     resetLobbyToWaiting,
     disbandLobby,
+    normalizeRoundTimeSeconds,
+    ALLOWED_ROUND_TIME_SECONDS,
 };

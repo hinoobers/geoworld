@@ -148,6 +148,49 @@ router.post("/:code/map", userOrGuestMiddleware, async (req, res) => {
     }
 });
 
+router.post("/:code/settings", userOrGuestMiddleware, async (req, res) => {
+    const identity = lobbyHandler.identityFromToken(req.user);
+    const { map_id, round_time_seconds } = req.body || {};
+
+    const lobby = lobbyHandler.getLobby(req.params.code);
+    if (!lobby) {
+        return res.status(404).json({ error: "Lobby not found" });
+    }
+    if (lobby.host_identity_id !== identity.identity_id) {
+        return res.status(403).json({ error: "Only the host can change settings" });
+    }
+    if (lobby.status !== "waiting") {
+        return res.status(400).json({ error: "Settings can only be changed before game starts" });
+    }
+
+    try {
+        if (map_id !== undefined) {
+            const parsedMapId = Number(map_id);
+            if (!Number.isInteger(parsedMapId) || parsedMapId <= 0) {
+                return res.status(400).json({ error: "map_id must be a positive integer" });
+            }
+            const rows = await query("SELECT id, name FROM maps WHERE id = ?", [parsedMapId]);
+            if (!rows || rows.length === 0) {
+                return res.status(404).json({ error: "Map not found" });
+            }
+            lobby.map_id = parsedMapId;
+            lobby.map_name = rows[0].name;
+        }
+
+        if (round_time_seconds !== undefined) {
+            if (!lobbyHandler.ALLOWED_ROUND_TIME_SECONDS.has(Number(round_time_seconds))) {
+                return res.status(400).json({ error: "Invalid round_time_seconds" });
+            }
+            lobby.round_time_seconds = lobbyHandler.normalizeRoundTimeSeconds(round_time_seconds);
+        }
+
+        broadcastLobby(req, lobby);
+        return res.json({ ok: true, lobby: lobbyHandler.serializeLobby(lobby) });
+    } catch {
+        return res.status(500).json({ error: "Failed to update lobby settings" });
+    }
+});
+
 router.post("/:code/leave", userOrGuestMiddleware, (req, res) => {
     const identity = lobbyHandler.identityFromToken(req.user);
     const existing = lobbyHandler.getLobby(req.params.code);
