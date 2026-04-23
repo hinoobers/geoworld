@@ -78,8 +78,16 @@
 
 .position-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr auto auto auto;
+    grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.6fr auto auto auto;
     gap: 8px;
+}
+
+.position-row input {
+    min-width: 0;
+}
+
+.position-row button {
+    padding: 10px;
 }
 
 .paste-position {

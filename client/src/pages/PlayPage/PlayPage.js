@@ -55,6 +55,7 @@ function buildStreetViewEmbedUrl(streetView) {
 
     const zoomRaw = Number(streetView.zoom);
     const safeZoom = Number.isFinite(zoomRaw) ? zoomRaw : 0;
+    console.log("[PlayPage] street view zoom", { raw: streetView.zoom, applied: safeZoom });
     return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${safeHeading},0,0,${safeZoom}&output=svembed`;
 }
 
