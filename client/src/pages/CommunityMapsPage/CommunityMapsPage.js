@@ -5,7 +5,7 @@ import PlayMapModal from "../../components/PlayMapModal/PlayMapModal";
 import { useAuth } from "../../context/AuthContext";
 import "./CommunityMapsPage.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL + "/maps" || "http://localhost:3000/api/maps";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api/maps";
 
 const CommunityMapsPage = () => {
     const navigate = useNavigate();

@@ -16,7 +16,16 @@ const io = new Server(server, {
 
 app.set("io", io);
 
-app.use(cors());
+const corsOptions = {
+    origin: [
+        "https://geoworld-psi.vercel.app"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
