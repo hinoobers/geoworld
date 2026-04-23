@@ -299,6 +299,16 @@ const CreateMapPage = () => {
             return;
         }
 
+        const hasInvalid = sanitizedPositions.some(
+            (p) =>
+                p.lat < -90 || p.lat > 90 ||
+                p.lng < -180 || p.lng > 180
+        );
+
+        if (hasInvalid) {
+            setError("One or more coordinates are out of bounds");
+            return;
+        }
         setError("");
         setSuccessMessage("");
 
@@ -429,7 +439,6 @@ const CreateMapPage = () => {
 
                     <div className="create-map-actions">
                         <button type="submit" disabled={loading}>{loading ? "Creating..." : "Create Map"}</button>
-                        <button type="button" onClick={() => navigate("/play")}>Go To Play</button>
                     </div>
                 </form>
             </main>

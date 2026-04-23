@@ -68,18 +68,8 @@ router.post("/create-map", middleware, async (req, res) => {
                 "INSERT INTO maps (name, description, created_by) VALUES (?, ?, ?)",
                 [map_name, description || null, req.user.id]
             );
-        } catch {
-            try {
-                createdMap = await query(
-                    "INSERT INTO maps (name, description, user_id) VALUES (?, ?, ?)",
-                    [map_name, description || null, req.user.id]
-                );
-            } catch {
-                createdMap = await query(
-                    "INSERT INTO maps (name, description) VALUES (?, ?)",
-                    [map_name, description || null]
-                );
-            }
+        } catch (error) {
+            console.error("[mapRoutes] create-map failed to insert map", error);
         }
 
         const mapId = createdMap.insertId;
