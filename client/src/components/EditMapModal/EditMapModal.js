@@ -180,13 +180,13 @@ const EditMapModal = ({ map, onClose, onSaved }) => {
                         <div className="edit-map-positions">
                             {positions.map((p, i) => (
                                 <div className="edit-map-position" key={`pos-${i}`}>
-                                    <input type="number" step="any" placeholder="Lat"
+                                    <input type="text" inputMode="decimal" placeholder="Lat"
                                         value={p.lat} onChange={(e) => updatePosition(i, "lat", e.target.value)} />
-                                    <input type="number" step="any" placeholder="Lng"
+                                    <input type="text" inputMode="decimal" placeholder="Lng"
                                         value={p.lng} onChange={(e) => updatePosition(i, "lng", e.target.value)} />
-                                    <input type="number" step="any" placeholder="Yaw"
+                                    <input type="text" inputMode="decimal" placeholder="Yaw"
                                         value={p.yaw} onChange={(e) => updatePosition(i, "yaw", e.target.value)} />
-                                    <input type="number" step="any" placeholder="Pitch"
+                                    <input type="text" inputMode="decimal" placeholder="Pitch"
                                         value={p.pitch} onChange={(e) => updatePosition(i, "pitch", e.target.value)} />
                                     <button type="button" className="edit-map-remove"
                                         onClick={() => removePosition(i)} disabled={positions.length <= 1}>

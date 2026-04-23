@@ -97,6 +97,18 @@ function broadcastPreviewToTeammates(io, game, senderIdentityId, payload) {
     }
 }
 
+const DISCONNECT_GRACE_MS = 5_000;
+const pendingAbandons = new Map(); // key: `${gameCode}:${identityId}` -> timeout
+
+function cancelPendingAbandon(gameCode, identityId) {
+    const key = `${gameCode}:${identityId}`;
+    const handle = pendingAbandons.get(key);
+    if (handle) {
+        clearTimeout(handle);
+        pendingAbandons.delete(key);
+    }
+}
+
 io.on("connection", (socket) => {
     socket.on("join_lobby", ({ code }, ack) => {
         const identity = socket.data.identity;
@@ -144,6 +156,7 @@ io.on("connection", (socket) => {
         socket.join(`game:${code}`);
         socket.data.game_code = code;
 
+        cancelPendingAbandon(code, identity.identity_id);
         multiplayerGameHandler.markParticipantConnected(game, identity.identity_id, true);
 
         const state = multiplayerGameHandler.serializeStateForIdentity(game, identity.identity_id);
@@ -232,31 +245,48 @@ io.on("connection", (socket) => {
                 const disconnectedName = game.participants[identity.identity_id]?.display_name || "A player";
 
                 if (lobby && lobby.status === "in_game") {
-                    const disconnectedIsHost = lobby.host_identity_id === identity.identity_id;
-                    const reason = `${disconnectedName} left the match`;
-                    io.to(`lobby:${gameCode}`).emit("lobby_abandoned", {
-                        reason,
-                        left_identity_id: identity.identity_id,
-                        host_left: disconnectedIsHost,
-                    });
-                    io.to(`game:${gameCode}`).emit("lobby_abandoned", {
-                        reason,
-                        left_identity_id: identity.identity_id,
-                        host_left: disconnectedIsHost,
-                    });
-                    multiplayerGameHandler.deleteGame(gameCode);
+                    multiplayerGameHandler.markParticipantConnected(game, identity.identity_id, false);
+                    broadcastGameState(io, game);
 
-                    if (disconnectedIsHost) {
-                        lobbyHandler.disbandLobby(gameCode);
-                        return;
-                    }
+                    const key = `${gameCode}:${identity.identity_id}`;
+                    cancelPendingAbandon(gameCode, identity.identity_id);
 
-                    const updatedLobby = lobbyHandler.removeParticipant(gameCode, identity.identity_id);
-                    if (updatedLobby) {
-                        updatedLobby.status = "waiting";
-                        updatedLobby.game_id = null;
-                        io.to(`lobby:${gameCode}`).emit("lobby_updated", lobbyHandler.serializeLobby(updatedLobby));
-                    }
+                    const handle = setTimeout(() => {
+                        pendingAbandons.delete(key);
+                        const liveGame = multiplayerGameHandler.getGame(gameCode);
+                        const liveLobby = lobbyHandler.getLobby(gameCode);
+                        if (!liveGame || !liveLobby || liveLobby.status !== "in_game") return;
+                        const stillDisconnected = liveGame.participants[identity.identity_id]?.is_connected === false;
+                        if (!stillDisconnected) return;
+
+                        const disconnectedIsHost = liveLobby.host_identity_id === identity.identity_id;
+                        const reason = `${disconnectedName} left the match`;
+                        io.to(`lobby:${gameCode}`).emit("lobby_abandoned", {
+                            reason,
+                            left_identity_id: identity.identity_id,
+                            host_left: disconnectedIsHost,
+                        });
+                        io.to(`game:${gameCode}`).emit("lobby_abandoned", {
+                            reason,
+                            left_identity_id: identity.identity_id,
+                            host_left: disconnectedIsHost,
+                        });
+                        multiplayerGameHandler.deleteGame(gameCode);
+
+                        if (disconnectedIsHost) {
+                            lobbyHandler.disbandLobby(gameCode);
+                            return;
+                        }
+
+                        const updatedLobby = lobbyHandler.removeParticipant(gameCode, identity.identity_id);
+                        if (updatedLobby) {
+                            updatedLobby.status = "waiting";
+                            updatedLobby.game_id = null;
+                            io.to(`lobby:${gameCode}`).emit("lobby_updated", lobbyHandler.serializeLobby(updatedLobby));
+                        }
+                    }, DISCONNECT_GRACE_MS);
+                    if (typeof handle.unref === "function") handle.unref();
+                    pendingAbandons.set(key, handle);
                     return;
                 }
 

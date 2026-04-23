@@ -373,29 +373,29 @@ const CreateMapPage = () => {
                         {positions.map((position, index) => (
                             <article className="position-row" key={`position-${index}`}>
                                 <input
-                                    type="number"
-                                    step="any"
+                                    type="text"
+                                    inputMode="decimal"
                                     placeholder="Latitude"
                                     value={position.lat}
                                     onChange={(event) => updatePosition(index, "lat", event.target.value)}
                                 />
                                 <input
-                                    type="number"
-                                    step="any"
+                                    type="text"
+                                    inputMode="decimal"
                                     placeholder="Longitude"
                                     value={position.lng}
                                     onChange={(event) => updatePosition(index, "lng", event.target.value)}
                                 />
                                 <input
-                                    type="number"
-                                    step="any"
+                                    type="text"
+                                    inputMode="decimal"
                                     placeholder="Yaw"
                                     value={position.yaw}
                                     onChange={(event) => updatePosition(index, "yaw", event.target.value)}
                                 />
                                 <input
-                                    type="number"
-                                    step="any"
+                                    type="text"
+                                    inputMode="decimal"
                                     placeholder="Pitch"
                                     value={position.pitch}
                                     onChange={(event) => updatePosition(index, "pitch", event.target.value)}
