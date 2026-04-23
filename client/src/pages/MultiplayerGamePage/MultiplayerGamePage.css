@@ -85,3 +85,35 @@
         grid-template-columns: 1fr;
     }
 }
+
+.mp-timer-overlay {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(9, 9, 18, 0.78);
+    border: 1px solid rgba(153, 122, 255, 0.55);
+    color: #f5f6ff;
+    font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+}
+
+.mp-timer-overlay.is-critical {
+    background: rgba(60, 10, 10, 0.85);
+    border-color: rgba(255, 90, 110, 0.75);
+    color: #ffd6dc;
+    animation: mp-timer-pulse 1s ease-in-out infinite;
+}
+
+@keyframes mp-timer-pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.06); }
+}

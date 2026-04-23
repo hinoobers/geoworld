@@ -231,12 +231,12 @@ const MultiplayerGamePage = () => {
     const [now, setNow] = useState(() => Date.now());
     useEffect(() => {
         const deadline = state?.deadline_ms;
-        if (!deadline || state?.revealed || state?.my_guess) return;
+        if (!deadline || state?.revealed) return;
         const id = setInterval(() => setNow(Date.now()), 500);
         return () => clearInterval(id);
-    }, [state?.deadline_ms, state?.revealed, state?.my_guess]);
+    }, [state?.deadline_ms, state?.revealed]);
 
-    const timeLeftMs = state?.deadline_ms && !state?.revealed && !state?.my_guess
+    const timeLeftMs = state?.deadline_ms && !state?.revealed
         ? Math.max(0, state.deadline_ms - now)
         : null;
 
@@ -478,6 +478,12 @@ const MultiplayerGamePage = () => {
                 <div className="street-view-empty">Street view unavailable.</div>
             )}
 
+            {timeLeftMs !== null ? (
+                <div className={`mp-timer-overlay ${timeLeftMs <= 10000 ? "is-critical" : ""}`}>
+                    {Math.floor(timeLeftMs / 60000)}:{String(Math.floor((timeLeftMs % 60000) / 1000)).padStart(2, "0")}
+                </div>
+            ) : null}
+
             <aside className="hud-panel hud-left">
                 <div className="hud-actions">
                     <button type="button" onClick={leaveGame}>Back</button>
@@ -487,11 +493,6 @@ const MultiplayerGamePage = () => {
                 <p className="play-muted">
                     You are on Side {mySide || "?"} — {myLocked ? "locked in." : "drop a pin when you know it."}
                 </p>
-                {timeLeftMs !== null ? (
-                    <p className="play-muted">
-                        Time left: {Math.floor(timeLeftMs / 60000)}:{String(Math.floor((timeLeftMs % 60000) / 1000)).padStart(2, "0")}
-                    </p>
-                ) : null}
 
                 <div className="mp-scoreboard">
                     <div className={`mp-scoreboard-side ${mySide === "A" ? "is-me" : ""}`}>
