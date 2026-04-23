@@ -1,34 +1,45 @@
 .admin-page {
-    padding: 24px 32px 64px;
-    color: white;
+    padding: 28px 32px 64px;
+    color: #f5f6ff;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
+    font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
 }
 
 .admin-page h1 {
-    margin-bottom: 16px;
+    margin: 0 0 18px;
+    background: linear-gradient(90deg, #c9a4ff, #8fb3ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: 1.8rem;
 }
 
 .admin-page h2 {
-    margin: 0 0 12px;
-    font-size: 18px;
-    opacity: 0.9;
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    color: #dad8f5;
+    letter-spacing: 0.02em;
 }
 
 .admin-section {
-    margin-top: 28px;
-    background-color: rgba(0, 0, 0, 0.75);
-    border-radius: 12px;
-    padding: 18px 20px;
+    margin-top: 22px;
+    padding: 20px 22px;
+    border-radius: 16px;
+    background: linear-gradient(140deg, rgba(28, 28, 50, 0.95), rgba(40, 28, 62, 0.95));
+    border: 1px solid rgba(153, 122, 255, 0.28);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
 }
 
 .admin-error {
-    background-color: rgba(180, 40, 40, 0.85);
-    color: white;
+    background: rgba(255, 154, 162, 0.12);
+    border: 1px solid rgba(255, 154, 162, 0.35);
+    color: #ff9aa2;
     padding: 10px 14px;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-top: 12px;
+    font-size: 0.92rem;
 }
 
 .admin-overview {
@@ -42,68 +53,81 @@
     flex-direction: column;
     align-items: center;
     min-width: 110px;
-    padding: 14px 18px;
-    background-color: rgba(138, 43, 226, 0.15);
-    border: 1px solid rgba(138, 43, 226, 0.5);
-    border-radius: 10px;
+    padding: 16px 20px;
+    background: rgba(143, 80, 255, 0.1);
+    border: 1px solid rgba(153, 122, 255, 0.45);
+    border-radius: 12px;
 }
 
 .admin-stat-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: blueviolet;
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #8f50ff 0%, #5c8dff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .admin-stat-label {
-    font-size: 12px;
-    opacity: 0.8;
+    font-size: 0.72rem;
+    color: #dad8f5;
+    opacity: 0.85;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 4px;
+    letter-spacing: 0.08em;
+    margin-top: 6px;
 }
 
 .admin-table-wrap {
     overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(201, 194, 255, 0.12);
 }
 
 .admin-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 0.92rem;
 }
 
 .admin-table th,
 .admin-table td {
-    padding: 8px 10px;
+    padding: 10px 12px;
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-table tbody tr:hover {
+    background: rgba(143, 80, 255, 0.06);
 }
 
 .admin-table th {
     font-weight: 600;
-    opacity: 0.8;
-    font-size: 12px;
+    color: #dad8f5;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.08em;
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .admin-role {
     display: inline-block;
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
 }
 
 .admin-role-admin {
-    background-color: blueviolet;
-    color: white;
+    background: linear-gradient(90deg, #8f50ff 0%, #5c8dff 100%);
+    color: #ffffff;
 }
 
 .admin-role-user {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(255, 255, 255, 0.08);
+    color: #dad8f5;
+    border: 1px solid rgba(201, 194, 255, 0.2);
 }
 
 .admin-actions {
@@ -113,13 +137,14 @@
 }
 
 .admin-actions button {
-    padding: 6px 12px;
-    font-size: 13px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    background-color: blueviolet;
-    color: white;
+    background: linear-gradient(90deg, #8f50ff 0%, #5c8dff 100%);
+    color: #ffffff;
 }
 
 .admin-actions button:disabled {
@@ -128,5 +153,107 @@
 }
 
 .admin-actions .admin-danger {
-    background-color: #c23030;
+    background: rgba(255, 154, 162, 0.15);
+    color: #ff9aa2;
+    border: 1px solid rgba(255, 154, 162, 0.35);
+}
+
+.admin-actions .admin-danger:hover:not(:disabled) {
+    background: rgba(255, 154, 162, 0.28);
+}
+
+/* Modal */
+.admin-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 9, 18, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.admin-modal {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    padding: 24px 24px 22px;
+    border-radius: 16px;
+    background: linear-gradient(140deg, rgba(28, 28, 50, 0.98), rgba(40, 28, 62, 0.98));
+    border: 1px solid rgba(153, 122, 255, 0.45);
+    box-shadow: 0 22px 40px rgba(0, 0, 0, 0.45);
+    color: #f5f6ff;
+}
+
+.admin-modal h2 {
+    margin: 0 0 8px;
+    font-size: 1.3rem;
+    color: #f5f6ff;
+}
+
+.admin-modal-description {
+    margin: 0 0 16px;
+    color: #dad8f5;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.admin-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f6ff;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.admin-modal-close:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.admin-modal-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.admin-modal-actions button {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.admin-modal-primary {
+    background: linear-gradient(90deg, #8f50ff 0%, #5c8dff 100%);
+    color: #ffffff;
+}
+
+.admin-modal-danger {
+    background: rgba(255, 154, 162, 0.18);
+    color: #ff9aa2;
+    border: 1px solid rgba(255, 154, 162, 0.5) !important;
+}
+
+.admin-modal-danger:hover:not(:disabled) {
+    background: rgba(255, 154, 162, 0.3);
+}
+
+.admin-modal-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f6ff;
+    border: 1px solid rgba(201, 194, 255, 0.35) !important;
+}
+
+.admin-modal-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

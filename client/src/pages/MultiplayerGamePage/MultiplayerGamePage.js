@@ -88,7 +88,8 @@ function buildStreetViewEmbedUrl(streetView) {
     const lng = Number(streetView.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
     const heading = Number.isFinite(Number(streetView.rotation)) ? Number(streetView.rotation) : 0;
-    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${heading},0,0,0&output=svembed`;
+    const zoom = Number.isFinite(Number(streetView.zoom)) ? Number(streetView.zoom) : 0;
+    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${heading},0,0,${zoom}&output=svembed`;
 }
 
 function GuessMapEvents({ onPick, disabled }) {

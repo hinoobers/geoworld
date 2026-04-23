@@ -6,20 +6,20 @@ const { middleware } = require("../auth");
 async function updateMapPositionWithFallbacks(mapId, positionId, position) {
     const attempts = [
         {
-            sql: "UPDATE map_positions SET latitude = ?, longitude = ?, yaw = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
-            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+            sql: "UPDATE map_positions SET latitude = ?, longitude = ?, yaw = ?, pitch = ?, zoom = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, position.zoom, positionId, mapId],
         },
         {
-            sql: "UPDATE map_positions SET latitude = ?, longitude = ?, rotation = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
-            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+            sql: "UPDATE map_positions SET latitude = ?, longitude = ?, rotation = ?, pitch = ?, zoom = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, position.zoom, positionId, mapId],
         },
         {
-            sql: "UPDATE map_positions SET lat = ?, lng = ?, yaw = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
-            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+            sql: "UPDATE map_positions SET lat = ?, lng = ?, yaw = ?, pitch = ?, zoom = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, position.zoom, positionId, mapId],
         },
         {
-            sql: "UPDATE map_positions SET lat = ?, lng = ?, rotation = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
-            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+            sql: "UPDATE map_positions SET lat = ?, lng = ?, rotation = ?, pitch = ?, zoom = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, position.zoom, positionId, mapId],
         },
     ];
 
@@ -39,20 +39,20 @@ async function updateMapPositionWithFallbacks(mapId, positionId, position) {
 async function insertMapPositionWithFallbacks(mapId, position) {
     const attempts = [
         {
-            sql: "INSERT INTO map_positions (map_id, latitude, longitude, yaw, pitch) VALUES (?, ?, ?, ?, ?)",
-            values: [mapId, position.lat, position.lng, position.yaw, position.pitch],
+            sql: "INSERT INTO map_positions (map_id, latitude, longitude, yaw, pitch, zoom) VALUES (?, ?, ?, ?, ?, ?)",
+            values: [mapId, position.lat, position.lng, position.yaw, position.pitch, position.zoom],
         },
         {
-            sql: "INSERT INTO map_positions (map_id, latitude, longitude, rotation, pitch) VALUES (?, ?, ?, ?, ?)",
-            values: [mapId, position.lat, position.lng, position.yaw, position.pitch],
+            sql: "INSERT INTO map_positions (map_id, latitude, longitude, rotation, pitch, zoom) VALUES (?, ?, ?, ?, ?, ?)",
+            values: [mapId, position.lat, position.lng, position.yaw, position.pitch, position.zoom],
         },
         {
-            sql: "INSERT INTO map_positions (map_id, lat, lng, yaw, pitch) VALUES (?, ?, ?, ?, ?)",
-            values: [mapId, position.lat, position.lng, position.yaw, position.pitch],
+            sql: "INSERT INTO map_positions (map_id, lat, lng, yaw, pitch, zoom) VALUES (?, ?, ?, ?, ?, ?)",
+            values: [mapId, position.lat, position.lng, position.yaw, position.pitch, position.zoom],
         },
         {
-            sql: "INSERT INTO map_positions (map_id, lat, lng, rotation, pitch) VALUES (?, ?, ?, ?, ?)",
-            values: [mapId, position.lat, position.lng, position.yaw, position.pitch],
+            sql: "INSERT INTO map_positions (map_id, lat, lng, rotation, pitch, zoom) VALUES (?, ?, ?, ?, ?, ?)",
+            values: [mapId, position.lat, position.lng, position.yaw, position.pitch, position.zoom],
         },
     ];
 
@@ -87,6 +87,7 @@ router.post("/create-map", middleware, async (req, res) => {
             lng: Number(position?.lng),
             yaw: Number(position?.yaw ?? position?.rotation ?? 0),
             pitch: Number(position?.pitch ?? 0),
+            zoom: Number.isFinite(Number(position?.zoom)) ? Number(position.zoom) : 1,
         }))
         .filter((position) => Number.isFinite(position.lat) && Number.isFinite(position.lng));
 
@@ -233,6 +234,7 @@ router.put("/:id", middleware, async (req, res) => {
                 lng: Number(p?.lng ?? p?.longitude),
                 yaw: Number(p?.yaw ?? p?.rotation ?? 0),
                 pitch: Number(p?.pitch ?? 0),
+                zoom: Number.isFinite(Number(p?.zoom)) ? Number(p.zoom) : 1,
             }))
             .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
         if (sanitizedPositions.length !== map_positions.length) {

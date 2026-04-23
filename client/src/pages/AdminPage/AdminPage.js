@@ -15,6 +15,8 @@ const AdminPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [actionError, setActionError] = useState("");
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     const authedFetch = useCallback(
         (path, options = {}) =>
@@ -72,16 +74,30 @@ const AdminPage = () => {
         setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role: nextRole } : u)));
     };
 
-    const handleDeleteUser = async (id, username) => {
-        if (!window.confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+    const mapsForUser = (userId) =>
+        maps.filter((m) => Number(m.created_by) === Number(userId));
+
+    const openDeleteUser = (userRow) => {
         setActionError("");
-        const res = await authedFetch(`/users/${id}`, { method: "DELETE" });
+        setDeleteTarget(userRow);
+    };
+
+    const confirmDeleteUser = async (mapsAction) => {
+        if (!deleteTarget) return;
+        setDeleting(true);
+        setActionError("");
+        const res = await authedFetch(`/users/${deleteTarget.id}`, {
+            method: "DELETE",
+            body: JSON.stringify({ maps_action: mapsAction }),
+        });
+        setDeleting(false);
         if (!res.ok) {
             const body = await res.json().catch(() => null);
             setActionError(body?.error || "Failed to delete user");
             return;
         }
-        setUsers((prev) => prev.filter((u) => u.id !== id));
+        setDeleteTarget(null);
+        setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
         loadAll();
     };
 
@@ -182,7 +198,7 @@ const AdminPage = () => {
                                                             type="button"
                                                             className="admin-danger"
                                                             disabled={isSelf}
-                                                            onClick={() => handleDeleteUser(u.id, u.username)}
+                                                            onClick={() => openDeleteUser(u)}
                                                         >
                                                             Delete
                                                         </button>
@@ -233,8 +249,82 @@ const AdminPage = () => {
                     </>
                 )}
             </div>
+
+            {deleteTarget ? (
+                <DeleteUserModal
+                    target={deleteTarget}
+                    mapCount={mapsForUser(deleteTarget.id).length}
+                    deleting={deleting}
+                    onCancel={() => !deleting && setDeleteTarget(null)}
+                    onConfirm={confirmDeleteUser}
+                />
+            ) : null}
         </div>
     );
 };
+
+const DeleteUserModal = ({ target, mapCount, deleting, onCancel, onConfirm }) => (
+    <div className="admin-modal-backdrop" onClick={onCancel}>
+        <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="admin-modal-close" onClick={onCancel} aria-label="Close">×</button>
+            <h2>Delete {target.username}?</h2>
+            {mapCount > 0 ? (
+                <>
+                    <p className="admin-modal-description">
+                        This user has <strong>{mapCount}</strong> map{mapCount === 1 ? "" : "s"}. Choose what happens to them.
+                    </p>
+                    <div className="admin-modal-actions">
+                        <button
+                            type="button"
+                            className="admin-modal-primary"
+                            onClick={() => onConfirm("transfer")}
+                            disabled={deleting}
+                        >
+                            Transfer maps to me
+                        </button>
+                        <button
+                            type="button"
+                            className="admin-modal-danger"
+                            onClick={() => onConfirm("delete")}
+                            disabled={deleting}
+                        >
+                            Delete maps too
+                        </button>
+                        <button
+                            type="button"
+                            className="admin-modal-secondary"
+                            onClick={onCancel}
+                            disabled={deleting}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <p className="admin-modal-description">This cannot be undone.</p>
+                    <div className="admin-modal-actions">
+                        <button
+                            type="button"
+                            className="admin-modal-danger"
+                            onClick={() => onConfirm("delete")}
+                            disabled={deleting}
+                        >
+                            {deleting ? "Deleting…" : "Delete user"}
+                        </button>
+                        <button
+                            type="button"
+                            className="admin-modal-secondary"
+                            onClick={onCancel}
+                            disabled={deleting}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </>
+            )}
+        </div>
+    </div>
+);
 
 export default AdminPage;

@@ -65,18 +65,27 @@ router.delete("/users/:id", async (req, res) => {
         return res.status(400).json({ error: "You cannot delete yourself" });
     }
 
+    const mapsAction = (req.body?.maps_action || req.query?.maps_action || "delete").toString();
+    if (mapsAction !== "delete" && mapsAction !== "transfer") {
+        return res.status(400).json({ error: "maps_action must be 'delete' or 'transfer'" });
+    }
+
     try {
-        const userMaps = await db.query("SELECT id FROM maps WHERE created_by = ?", [id]);
-        for (const row of userMaps) {
-            await db.query("DELETE FROM map_positions WHERE map_id = ?", [row.id]).catch(() => {});
-            await db.query("DELETE FROM maps WHERE id = ?", [row.id]).catch(() => {});
+        if (mapsAction === "transfer") {
+            await db.query("UPDATE maps SET created_by = ? WHERE created_by = ?", [req.user.id, id]);
+        } else {
+            const userMaps = await db.query("SELECT id FROM maps WHERE created_by = ?", [id]);
+            for (const row of userMaps) {
+                await db.query("DELETE FROM map_positions WHERE map_id = ?", [row.id]).catch(() => {});
+                await db.query("DELETE FROM maps WHERE id = ?", [row.id]).catch(() => {});
+            }
         }
 
         const result = await db.query("DELETE FROM users WHERE id = ?", [id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "User not found" });
         }
-        res.json({ ok: true });
+        res.json({ ok: true, maps_action: mapsAction });
     } catch (error) {
         console.error("[admin] delete user failed", error?.message);
         res.status(500).json({ error: error.message || "Failed to delete user" });

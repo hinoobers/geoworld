@@ -12,6 +12,7 @@ function emptyPosition() {
         lng: "",
         yaw: "0",
         pitch: "0",
+        zoom: "1",
     };
 }
 
@@ -101,6 +102,31 @@ function parseStreetViewLink(input) {
         return null;
     };
 
+    const readZoom = () => {
+        const zoomParam = url.searchParams.get("zoom");
+        if (zoomParam !== null) {
+            const z = Number(zoomParam);
+            if (Number.isFinite(z)) return z;
+        }
+
+        const pathFov = source.match(/@-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,3a,(\d+(?:\.\d+)?)y/);
+        if (pathFov) {
+            const fov = Number(pathFov[1]);
+            if (Number.isFinite(fov) && fov > 0) {
+                return Math.max(0, Math.min(5, Math.log2(180 / fov)));
+            }
+        }
+
+        const cbp = url.searchParams.get("cbp");
+        if (cbp) {
+            const parts = cbp.split(",");
+            const z = Number(parts[4]);
+            if (Number.isFinite(z)) return z;
+        }
+
+        return 1;
+    };
+
     const readYawPitch = () => {
         const headingParam = url.searchParams.get("heading");
         const pitchParam = url.searchParams.get("pitch");
@@ -171,17 +197,20 @@ function parseStreetViewLink(input) {
     }
 
     const orientation = readYawPitch();
+    const zoom = readZoom();
     console.log("[CreateMapPage] parseStreetViewLink: extracted", {
         lat: coords.lat,
         lng: coords.lng,
         yaw: orientation.yaw,
         pitch: orientation.pitch,
+        zoom,
     });
     return {
         lat: coords.lat,
         lng: coords.lng,
         yaw: orientation.yaw,
         pitch: orientation.pitch,
+        zoom,
     };
 }
 
@@ -270,6 +299,7 @@ const CreateMapPage = () => {
             updatePosition(index, "lng", String(parsed.lng));
             updatePosition(index, "yaw", String(parsed.yaw));
             updatePosition(index, "pitch", String(parsed.pitch));
+            updatePosition(index, "zoom", String(parsed.zoom));
             console.log("[CreateMapPage] applied parsed position", parsed);
         } catch {
             setError("Unable to read clipboard. Allow clipboard permission and try again");
@@ -291,6 +321,7 @@ const CreateMapPage = () => {
                 lng: Number(position.lng),
                 yaw: Number(position.yaw || 0),
                 pitch: Number(position.pitch || 0),
+                zoom: Number(position.zoom || 1),
             }))
             .filter((position) => Number.isFinite(position.lat) && Number.isFinite(position.lng));
 
@@ -399,6 +430,13 @@ const CreateMapPage = () => {
                                     placeholder="Pitch"
                                     value={position.pitch}
                                     onChange={(event) => updatePosition(index, "pitch", event.target.value)}
+                                />
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="Zoom"
+                                    value={position.zoom}
+                                    onChange={(event) => updatePosition(index, "zoom", event.target.value)}
                                 />
                                 <button
                                     type="button"

@@ -11,11 +11,12 @@ function positionFromRow(row) {
         lng: String(row?.lng ?? row?.longitude ?? ""),
         yaw: String(row?.yaw ?? row?.rotation ?? 0),
         pitch: String(row?.pitch ?? 0),
+        zoom: String(row?.zoom ?? 1),
     };
 }
 
 function emptyPosition() {
-    return { id: null, lat: "", lng: "", yaw: "0", pitch: "0" };
+    return { id: null, lat: "", lng: "", yaw: "0", pitch: "0", zoom: "1" };
 }
 
 const EditMapModal = ({ map, onClose, onSaved }) => {
@@ -75,6 +76,7 @@ const EditMapModal = ({ map, onClose, onSaved }) => {
                 lng: Number(p.lng),
                 yaw: Number(p.yaw || 0),
                 pitch: Number(p.pitch || 0),
+                zoom: Number(p.zoom || 1),
             }))
             .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
@@ -188,6 +190,8 @@ const EditMapModal = ({ map, onClose, onSaved }) => {
                                         value={p.yaw} onChange={(e) => updatePosition(i, "yaw", e.target.value)} />
                                     <input type="text" inputMode="decimal" placeholder="Pitch"
                                         value={p.pitch} onChange={(e) => updatePosition(i, "pitch", e.target.value)} />
+                                    <input type="text" inputMode="decimal" placeholder="Zoom"
+                                        value={p.zoom} onChange={(e) => updatePosition(i, "zoom", e.target.value)} />
                                     <button type="button" className="edit-map-remove"
                                         onClick={() => removePosition(i)} disabled={positions.length <= 1}>
                                         Remove

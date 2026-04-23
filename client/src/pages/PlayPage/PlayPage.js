@@ -53,7 +53,9 @@ function buildStreetViewEmbedUrl(streetView) {
     const heading = Number(streetView.rotation);
     const safeHeading = Number.isFinite(heading) ? heading : 0;
 
-    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${safeHeading},0,0,0&output=svembed`;
+    const zoomRaw = Number(streetView.zoom);
+    const safeZoom = Number.isFinite(zoomRaw) ? zoomRaw : 0;
+    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${safeHeading},0,0,${safeZoom}&output=svembed`;
 }
 
 const BASEMAP_URL =

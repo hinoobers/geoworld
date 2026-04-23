@@ -142,7 +142,7 @@
 
 .edit-map-position {
     display: grid;
-    grid-template-columns: 1fr 1fr 0.7fr 0.7fr auto;
+    grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.7fr auto;
     gap: 6px;
     padding: 6px;
     border-radius: 10px;
