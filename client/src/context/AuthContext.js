@@ -1,24 +1,77 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const AUTH_STORAGE_KEY = "geoworld-auth";
+const USER_API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api/users";
 
 const AuthContext = createContext(null);
 
 function readStoredAuth() {
     try {
         const storedValue = localStorage.getItem(AUTH_STORAGE_KEY);
-        return storedValue ? JSON.parse(storedValue) : null;
+        if (!storedValue) {
+            return null;
+        }
+
+        const parsedValue = JSON.parse(storedValue);
+        if (!parsedValue?.token) {
+            return null;
+        }
+
+        return {
+            token: parsedValue.token,
+            user: parsedValue.user || null,
+        };
     } catch {
         return null;
     }
 }
 
-function buildToken() {
-    if (window.crypto?.randomUUID) {
-        return window.crypto.randomUUID();
+function decodeToken(token) {
+    const tokenParts = token.split(".");
+    if (tokenParts.length !== 3) {
+        return null;
     }
 
-    return `token-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    try {
+        const payload = tokenParts[1]
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(tokenParts[1].length / 4) * 4, "=");
+        const decodedPayload = JSON.parse(window.atob(payload));
+
+        return {
+            id: decodedPayload.id,
+            username: decodedPayload.username,
+            email: decodedPayload.email,
+        };
+    } catch {
+        return null;
+    }
+}
+
+async function requestUserAuth(path, body) {
+    const response = await fetch(`${USER_API_BASE_URL}${path}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+
+    const responseBody = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        throw new Error(responseBody?.error || "Unable to complete authentication");
+    }
+
+    return responseBody;
+}
+
+function buildAuthState(token, fallbackUser = null) {
+    return {
+        token,
+        user: decodeToken(token) || fallbackUser,
+    };
 }
 
 export function AuthProvider({ children }) {
@@ -34,14 +87,28 @@ export function AuthProvider({ children }) {
     }, [auth]);
 
     const value = useMemo(() => {
-        const login = (userData) => {
-            const nextAuth = {
-                token: userData.token || buildToken(),
-                user: userData.user || null,
-            };
+        const login = async (credentials) => {
+            if (credentials?.token) {
+                const nextAuth = buildAuthState(credentials.token, credentials.user || null);
+
+                setAuth(nextAuth);
+                return nextAuth;
+            }
+
+            const { email, password } = credentials || {};
+            const { token } = await requestUserAuth("/login", { email, password });
+            const nextAuth = buildAuthState(token);
 
             setAuth(nextAuth);
             return nextAuth;
+        };
+
+        const register = async (userDetails) => {
+            const { username, email, password } = userDetails || {};
+
+            await requestUserAuth("/register", { username, email, password });
+
+            return login({ email, password });
         };
 
         const logout = () => {
@@ -53,6 +120,7 @@ export function AuthProvider({ children }) {
             user: auth?.user ?? null,
             isLoggedIn: Boolean(auth?.token),
             login,
+            register,
             logout,
         };
     }, [auth]);

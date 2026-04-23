@@ -1,0 +1,120 @@
+.daily-results-page {
+    min-height: 100%;
+    background:
+        radial-gradient(circle at 15% 10%, #392257 0%, transparent 35%),
+        radial-gradient(circle at 85% 20%, #243a74 0%, transparent 32%),
+        linear-gradient(180deg, #0d0d16 0%, #121225 55%, #171735 100%);
+}
+
+.daily-results-content {
+    max-width: 860px;
+    margin: 26px auto 0;
+    padding: 0 20px 28px;
+    box-sizing: border-box;
+    color: #f5f6ff;
+    font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
+}
+
+.daily-results-hero {
+    padding: 24px 28px;
+    border-radius: 18px;
+    background: linear-gradient(140deg, rgba(28, 28, 50, 0.95), rgba(40, 28, 62, 0.9));
+    border: 1px solid rgba(153, 122, 255, 0.32);
+    box-shadow: 0 18px 35px rgba(0, 0, 0, 0.35);
+}
+
+.daily-results-hero h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.daily-results-hero p {
+    margin: 8px 0 0;
+    color: #dad8f5;
+}
+
+.daily-results-actions {
+    margin-top: 18px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.daily-results-actions button {
+    border: 1px solid rgba(201, 194, 255, 0.35);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f6ff;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.daily-results-actions .daily-results-play {
+    background: linear-gradient(90deg, #8f50ff 0%, #5c8dff 100%);
+    border-color: transparent;
+    color: #fff;
+}
+
+.daily-results-empty {
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 12px;
+    background: rgba(16, 16, 31, 0.85);
+    border: 1px dashed rgba(201, 194, 255, 0.3);
+    color: #d8d4ff;
+    text-align: center;
+}
+
+.daily-results-error {
+    margin-top: 18px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: rgba(255, 120, 120, 0.18);
+    border: 1px solid rgba(255, 160, 160, 0.45);
+    color: #ffd6d6;
+    text-align: center;
+}
+
+.leaderboard-list {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(16, 16, 31, 0.85);
+    border: 1px solid rgba(184, 169, 255, 0.2);
+}
+
+.leaderboard-row-me {
+    background: rgba(143, 80, 255, 0.22);
+    border-color: rgba(201, 194, 255, 0.55);
+}
+
+.leaderboard-rank {
+    font-weight: 700;
+    color: #c9c2ff;
+    letter-spacing: 0.04em;
+}
+
+.leaderboard-name {
+    color: #f5f6ff;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.leaderboard-score {
+    color: #ece6ff;
+    font-weight: 700;
+}

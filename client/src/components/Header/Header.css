@@ -20,8 +20,30 @@
 
 .geo-header-actions {
     display: flex;
+    align-items: stretch;
+    height: 100%;
+    gap: 0;
+}
+
+.geo-header-section {
+    align-self: stretch;
+    display: flex;
     align-items: center;
-    gap: 12px;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #ffffff;
+    border-radius: 0;
+    color: #ffffff;
+    background: transparent;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.geo-header-section:hover {
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .geo-header-status {
@@ -30,6 +52,9 @@
 }
 
 .geo-header-actions button {
+    align-self: center;
+    height: auto;
+    margin-left: 12px;
     padding: 8px 14px;
     border: none;
     border-radius: 5px;

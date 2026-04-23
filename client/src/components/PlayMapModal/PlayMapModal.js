@@ -1,0 +1,73 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import "./PlayMapModal.css";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
+
+const PlayMapModal = ({ map, onClose }) => {
+    const navigate = useNavigate();
+    const { token } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    if (!map) return null;
+
+    const startSingleplayer = () => {
+        onClose();
+        navigate(`/play?map=${encodeURIComponent(String(map.map_id))}`);
+    };
+
+    const createLobby = async () => {
+        if (!token) {
+            setError("You must be logged in to create a lobby");
+            return;
+        }
+
+        setError("");
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/lobbies`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ map_id: map.map_id }),
+            });
+            const body = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(body?.error || "Failed to create lobby");
+            }
+            onClose();
+            navigate(`/lobby/${encodeURIComponent(body.code)}`);
+        } catch (nextError) {
+            setError(nextError.message || "Failed to create lobby");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="play-modal-backdrop" onClick={onClose}>
+            <div className="play-modal" onClick={(event) => event.stopPropagation()}>
+                <button type="button" className="play-modal-close" onClick={onClose} aria-label="Close">×</button>
+                <h2>{map.name || "Play map"}</h2>
+                {map.description ? <p className="play-modal-description">{map.description}</p> : null}
+
+                <div className="play-modal-actions">
+                    <button type="button" className="play-modal-primary" onClick={startSingleplayer} disabled={loading}>
+                        Singleplayer
+                    </button>
+                    <button type="button" className="play-modal-secondary" onClick={createLobby} disabled={loading}>
+                        {loading ? "Creating lobby..." : "Create Lobby"}
+                    </button>
+                </div>
+
+                {error ? <p className="play-modal-error">{error}</p> : null}
+            </div>
+        </div>
+    );
+};
+
+export default PlayMapModal;

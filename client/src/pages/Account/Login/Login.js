@@ -1,25 +1,36 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "../../../components/Header/Header";
 import { useAuth } from "../../../context/AuthContext";
 import "./Login.css";
 
+function safeRedirectTarget(raw) {
+    if (!raw || typeof raw !== "string") return "/home";
+    if (!raw.startsWith("/") || raw.startsWith("//")) return "/home";
+    return raw;
+}
+
 const Login = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { login } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
-    const handleSubmit = (event) => {
+    const redirectTo = safeRedirectTarget(searchParams.get("redirect"));
+
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
-        login({
-            user: {
-                email,
-            },
-        });
+        setError("");
 
-        navigate("/home");
+        try {
+            await login({ email, password });
+            navigate(redirectTo);
+        } catch (error) {
+            setError(error.message);
+        }
     };
 
     return (
@@ -49,6 +60,8 @@ const Login = () => {
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
                         />
+
+                        {error ? <p className="form-error">{error}</p> : null}
 
                         <button type="submit">Log in</button>
                     </form>

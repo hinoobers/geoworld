@@ -1,32 +1,43 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "../../../components/Header/Header";
 import { useAuth } from "../../../context/AuthContext";
 import "./Signup.css";
 
+function safeRedirectTarget(raw) {
+    if (!raw || typeof raw !== "string") return "/home";
+    if (!raw.startsWith("/") || raw.startsWith("//")) return "/home";
+    return raw;
+}
+
 const Signup = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const [searchParams] = useSearchParams();
+    const { register } = useAuth();
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [error, setError] = useState("");
 
-    const handleSubmit = (event) => {
+    const redirectTo = safeRedirectTarget(searchParams.get("redirect"));
+
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
         if (password !== confirmPassword) {
+            setError("Passwords do not match");
             return;
         }
 
-        login({
-            user: {
-                username,
-                email,
-            },
-        });
+        setError("");
 
-        navigate("/home");
+        try {
+            await register({ username, email, password });
+            navigate(redirectTo);
+        } catch (error) {
+            setError(error.message);
+        }
     };
 
     return (
@@ -74,6 +85,8 @@ const Signup = () => {
                             value={confirmPassword}
                             onChange={(event) => setConfirmPassword(event.target.value)}
                         />
+
+                        {error ? <p className="form-error">{error}</p> : null}
 
                         <button type="submit">Create Account</button>
                     </form>

@@ -1,0 +1,123 @@
+.create-map-page {
+    min-height: 100%;
+    background: linear-gradient(180deg, #0e1a2a 0%, #162842 52%, #1f3557 100%);
+}
+
+.create-map-content {
+    max-width: 980px;
+    margin: 22px auto 0;
+    padding: 0 16px 28px;
+    color: #f4f8ff;
+}
+
+.create-map-header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.create-map-header p {
+    margin: 8px 0 0;
+    color: #d2e2f3;
+}
+
+.create-map-form {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(157, 188, 216, 0.28);
+    background: rgba(9, 20, 34, 0.72);
+}
+
+.create-map-form label {
+    display: block;
+    margin: 12px 0 6px;
+    font-weight: 600;
+}
+
+.create-map-form input,
+.create-map-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid rgba(170, 202, 230, 0.34);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 9px 10px;
+}
+
+.positions-header {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.positions-header h2 {
+    margin: 0;
+    font-size: 1.12rem;
+}
+
+.positions-header button,
+.create-map-actions button,
+.position-row button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: linear-gradient(90deg, #2a9d8f 0%, #3a86ff 100%);
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.positions-list {
+    margin-top: 10px;
+    display: grid;
+    gap: 10px;
+}
+
+.position-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr auto auto auto;
+    gap: 8px;
+}
+
+.paste-position {
+    background: linear-gradient(90deg, #2f7f73 0%, #2bb4a3 100%);
+}
+
+.inspect-position {
+    background: linear-gradient(90deg, #286fb9 0%, #46a0ff 100%);
+}
+
+.remove-position {
+    background: linear-gradient(90deg, #a63f52 0%, #d75f7f 100%);
+}
+
+.create-map-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+}
+
+.create-map-error {
+    color: #ffd0d0;
+    font-weight: 600;
+    margin: 10px 0 0;
+}
+
+.create-map-success {
+    color: #cbf6d8;
+    font-weight: 600;
+    margin: 10px 0 0;
+}
+
+@media (max-width: 760px) {
+    .position-row {
+        grid-template-columns: 1fr;
+    }
+
+    .create-map-actions {
+        flex-direction: column;
+    }
+}

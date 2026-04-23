@@ -1,0 +1,292 @@
+.play-page {
+    position: relative;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    background: #0a1622;
+}
+
+.result-page {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #07121c;
+    color: #f5f9ff;
+}
+
+.result-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px 10px;
+    background: rgba(8, 18, 30, 0.94);
+    border-bottom: 1px solid rgba(141, 180, 216, 0.22);
+}
+
+.result-topbar h2,
+.result-topbar p {
+    margin: 0;
+}
+
+.result-topbar p {
+    margin-top: 4px;
+    color: #ffd166;
+    font-weight: 700;
+}
+
+.result-meta {
+    font-size: 0.95rem;
+    color: #c1d5ea;
+}
+
+.result-map-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.result-map {
+    width: 100%;
+    height: 100%;
+}
+
+.result-footer {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px 16px 14px;
+    background: rgba(8, 18, 30, 0.94);
+    border-top: 1px solid rgba(141, 180, 216, 0.22);
+}
+
+.result-summary-inline {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    color: #d8e8f6;
+}
+
+.result-summary-inline p {
+    margin: 0;
+}
+
+.continue-button {
+    border: none;
+    border-radius: 999px;
+    padding: 14px 24px;
+    background: linear-gradient(90deg, #2a9d8f 0%, #3a86ff 100%);
+    color: #ffffff;
+    font-weight: 800;
+    cursor: pointer;
+    min-width: 240px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.street-view-full {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #111b26;
+}
+
+.street-view-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d5e7f7;
+    background: radial-gradient(circle at 50% 30%, #22384f 0%, #0b1725 70%);
+    font-size: 1.1rem;
+}
+
+.hud-panel {
+    position: absolute;
+    z-index: 20;
+    background: rgba(8, 18, 30, 0.85);
+    border: 1px solid rgba(141, 180, 216, 0.3);
+    border-radius: 14px;
+    backdrop-filter: blur(6px);
+    color: #f5f9ff;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.hud-left {
+    top: 16px;
+    left: 16px;
+    width: min(360px, calc(100% - 32px));
+    padding: 16px;
+}
+
+.hud-left h1 {
+    margin: 8px 0 6px;
+    font-size: 1.4rem;
+}
+
+.hud-actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.hud-left label {
+    display: block;
+    margin: 10px 0 6px;
+    font-weight: 600;
+}
+
+.hud-left select,
+.hud-left input,
+.guess-input-grid input {
+    width: 100%;
+    border: 1px solid rgba(170, 201, 230, 0.3);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 9px 10px;
+    box-sizing: border-box;
+}
+
+.hud-left button,
+.hud-map button {
+    margin-top: 12px;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(90deg, #2a9d8f 0%, #3a86ff 100%);
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.hud-left button:disabled,
+.hud-map button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.play-error {
+    color: #ffd0d0;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.hud-map {
+    right: 16px;
+    bottom: 16px;
+    width: min(420px, calc(100% - 32px));
+    padding: 10px;
+}
+
+.guess-map-shell {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(166, 203, 235, 0.32);
+}
+
+.guess-map {
+    height: 280px;
+    width: 100%;
+}
+
+.guess-input-grid {
+    margin-top: 8px;
+    display: block;
+}
+
+.guess-hint {
+    margin: 0;
+    color: #d4e8f8;
+    font-size: 0.92rem;
+}
+
+.finish-screen {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(2, 8, 14, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.finish-card {
+    width: min(420px, 100%);
+    background: rgba(8, 18, 30, 0.92);
+    border: 1px solid rgba(141, 180, 216, 0.35);
+    border-radius: 16px;
+    padding: 20px;
+    color: #f5f9ff;
+}
+
+.finish-card h2 {
+    margin: 0 0 10px;
+}
+
+.finish-card p {
+    margin: 7px 0;
+}
+
+.finish-actions {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.finish-actions button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(90deg, #2a9d8f 0%, #3a86ff 100%);
+    color: #ffffff;
+}
+
+@media (max-width: 780px) {
+    .hud-left {
+        top: 10px;
+        left: 10px;
+        width: calc(100% - 20px);
+        max-height: 44vh;
+        overflow: auto;
+    }
+
+    .hud-map {
+        right: 10px;
+        bottom: 10px;
+        width: calc(100% - 20px);
+    }
+
+    .guess-map {
+        height: 220px;
+    }
+
+    .finish-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .result-topbar,
+    .result-footer {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .result-footer {
+        flex-direction: column;
+    }
+
+    .continue-button {
+        min-width: 180px;
+        width: 100%;
+        max-width: 320px;
+    }
+}

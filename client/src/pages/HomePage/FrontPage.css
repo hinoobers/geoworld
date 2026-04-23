@@ -63,6 +63,28 @@
     border: 1px solid rgba(201, 194, 255, 0.3);
 }
 
+.hero-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.daily-message {
+    margin: 14px 0 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(143, 80, 255, 0.18);
+    border: 1px solid rgba(201, 194, 255, 0.35);
+    color: #ece6ff;
+    font-size: 0.92rem;
+}
+
+.daily-message-error {
+    background: rgba(255, 120, 120, 0.18);
+    border-color: rgba(255, 160, 160, 0.45);
+    color: #ffd6d6;
+}
+
+
 .stats-grid {
     margin-top: 18px;
     display: grid;
@@ -140,6 +162,7 @@
 }
 
 .map-card {
+    position: relative;
     border-radius: 12px;
     min-height: 95px;
     padding: 14px;
@@ -149,6 +172,37 @@
     flex-direction: column;
     justify-content: flex-end;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.visibility-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.3);
+    transition: background 120ms ease, transform 120ms ease;
+}
+
+.visibility-toggle:hover {
+    transform: translateY(-1px);
+}
+
+.visibility-toggle.is-public {
+    background: rgba(76, 196, 126, 0.75);
+    border-color: rgba(170, 255, 197, 0.55);
+}
+
+.visibility-toggle.is-private {
+    background: rgba(0, 0, 0, 0.45);
+    border-color: rgba(255, 255, 255, 0.35);
 }
 
 .map-card h4 {
@@ -174,8 +228,24 @@
     background: linear-gradient(130deg, #237f8a, #1d3e66);
 }
 
+.map-card-clickable {
+    cursor: pointer;
+    transition: transform 120ms ease, filter 120ms ease;
+}
+
+.map-card-clickable:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+}
+
 .map-card-d {
     background: linear-gradient(130deg, #975635, #432332);
+}
+
+.map-card-empty {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px dashed rgba(201, 194, 255, 0.35);
+    box-shadow: none;
 }
 
 @media (max-width: 860px) {

@@ -1,12 +1,240 @@
 const express = require("express");
 const router = express.Router();
+const db = require("../database");
+const bcrypt = require("bcrypt");
+const { generateToken, middleware } = require("../auth");
 
-router.post("/register", (req, res) => {
+function parseSide(raw) {
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
 
+router.post("/register", async (req, res) => {
+    const { email, username, password } = req.body;
+    if (!email || !username || !password) {
+        return res.status(400).json({ error: "Email, username, and password are required" });
+    }
+
+    if(typeof email !== "string" || typeof username !== "string" || typeof password !== "string") {
+        return res.status(400).json({ error: "Email, username, and password must be strings" });
+    }
+
+    if(password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters long" });
+    }
+
+    const existingUser = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (existingUser.length > 0) {
+        return res.status(400).json({ error: "Email is already registered" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = await db.query("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", [email, username, hashedPassword]);
+    if(result.affectedRows === 0) {
+        return res.status(500).json({ error: "Failed to create user" });
+    }
+
+    res.status(201).json({ id: result.insertId });
 });
 
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+    }
 
+    if(typeof email !== "string" || typeof password !== "string") {
+        return res.status(400).json({ error: "Email and password must be strings" });
+    }
+
+    const user = await db.query("SELECT id, username, email, password FROM users WHERE email = ?", [email]);
+    if (user.length === 0) {
+        // we don't want to reveal whether account exists, so use same error message for both cases
+        return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user[0].password);
+    if (!isMatch) {
+        return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const token = generateToken(user[0]);
+    res.json({ token });
+});
+
+function findMySideAndOpponent(oneSide, secondSide, userIdNumeric) {
+    const userIdStr = String(userIdNumeric);
+
+    const matchesUser = (side) => {
+        if (!side) return false;
+        if (String(side.side) === userIdStr) return true;
+        if (Array.isArray(side.user_ids) && side.user_ids.map(Number).includes(userIdNumeric)) return true;
+        return false;
+    };
+
+    if (matchesUser(oneSide)) return { mine: oneSide, other: secondSide || null };
+    if (matchesUser(secondSide)) return { mine: secondSide, other: oneSide || null };
+    return { mine: null, other: null };
+}
+
+router.get("/me/stats", middleware, async (req, res) => {
+    try {
+        const userIdNumeric = Number(req.user.id);
+        const singleNeedle = `%"side":"${userIdNumeric}"%`;
+        const multiNeedle = `%"user_ids":%`;
+
+        const games = await db.query(
+            `SELECT game_id, mode, one_side, second_side, created_at
+             FROM games
+             WHERE one_side LIKE ? OR second_side LIKE ?
+                OR one_side LIKE ? OR second_side LIKE ?
+             ORDER BY game_id DESC`,
+            [singleNeedle, singleNeedle, multiNeedle, multiNeedle]
+        );
+
+        const oneWeekAgoMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+        let gamesPlayedThisWeek = 0;
+        let winStreak = 0;
+        let streakOpen = true;
+        let totalScore = 0;
+        let totalMaxScore = 0;
+        let completedGames = 0;
+
+        for (const row of games) {
+            const oneSide = parseSide(row.one_side);
+            const secondSide = parseSide(row.second_side);
+
+            const { mine: userSide, other: opponentSide } = findMySideAndOpponent(
+                oneSide,
+                secondSide,
+                userIdNumeric
+            );
+            if (!userSide) continue;
+
+            const score = Number(userSide.score) || 0;
+            const totalRounds = Number(userSide.total_rounds) || 0;
+            const status = userSide.status;
+
+            if (status !== "completed") continue;
+
+            completedGames += 1;
+
+            const createdAtMs = row.created_at ? new Date(row.created_at).getTime() : null;
+            if (createdAtMs && createdAtMs >= oneWeekAgoMs) {
+                gamesPlayedThisWeek += 1;
+            }
+
+            if (totalRounds > 0) {
+                totalScore += score;
+                totalMaxScore += totalRounds * 5000;
+            }
+
+            if (streakOpen) {
+                let isWin;
+                if (row.mode === "multiplayer" && opponentSide) {
+                    isWin = score > (Number(opponentSide.score) || 0);
+                } else {
+                    isWin = totalRounds > 0 && score >= totalRounds * 2500;
+                }
+
+                if (isWin) {
+                    winStreak += 1;
+                } else {
+                    streakOpen = false;
+                }
+            }
+        }
+
+        const accuracy = totalMaxScore > 0
+            ? Math.round((totalScore / totalMaxScore) * 100)
+            : 0;
+
+        return res.json({
+            win_streak: winStreak,
+            games_played_this_week: gamesPlayedThisWeek,
+            accuracy,
+            completed_games: completedGames,
+        });
+    } catch (error) {
+        console.error("[userRoutes] stats failed", error?.message);
+        return res.status(500).json({ error: "Failed to load stats" });
+    }
+});
+
+router.get("/me/games", middleware, async (req, res) => {
+    try {
+        const userIdNumeric = Number(req.user.id);
+        const singleNeedle = `%"side":"${userIdNumeric}"%`;
+        const multiNeedle = `%"user_ids":%`;
+
+        const rows = await db.query(
+            `SELECT g.game_id, g.mode, g.one_side, g.second_side, g.map_id, g.created_at, m.name AS map_name
+             FROM games g
+             LEFT JOIN maps m ON m.id = g.map_id
+             WHERE g.one_side LIKE ? OR g.second_side LIKE ?
+                OR g.one_side LIKE ? OR g.second_side LIKE ?
+             ORDER BY g.game_id DESC
+             LIMIT 200`,
+            [singleNeedle, singleNeedle, multiNeedle, multiNeedle]
+        );
+
+        const games = rows
+            .map((row) => {
+                const oneSide = parseSide(row.one_side);
+                const secondSide = parseSide(row.second_side);
+
+                const { mine: userSide, other: opponentSide } = findMySideAndOpponent(
+                    oneSide,
+                    secondSide,
+                    userIdNumeric
+                );
+
+                if (!userSide) return null;
+
+                const score = Number(userSide.score) || 0;
+                const totalRounds = Number(userSide.total_rounds) || 0;
+                const status = userSide.status || "unknown";
+
+                let result = null;
+                if (row.mode === "multiplayer" && opponentSide) {
+                    const opponentScore = Number(opponentSide.score) || 0;
+                    if (score > opponentScore) result = "win";
+                    else if (score < opponentScore) result = "loss";
+                    else result = "draw";
+                } else if (status === "completed" && totalRounds > 0) {
+                    result = score >= totalRounds * 2500 ? "win" : "loss";
+                }
+
+                const opponentName = row.mode === "multiplayer"
+                    ? opponentSide?.display_name || opponentSide?.side_label || null
+                    : null;
+
+                return {
+                    game_id: row.game_id,
+                    mode: row.mode,
+                    status,
+                    result,
+                    score,
+                    total_rounds: totalRounds,
+                    map_id: row.map_id,
+                    map_name: row.map_name || `Map #${row.map_id}`,
+                    opponent_name: opponentName,
+                    opponent_score: opponentSide ? (Number(opponentSide.score) || 0) : null,
+                    created_at: row.created_at || null,
+                };
+            })
+            .filter(Boolean);
+
+        return res.json(games);
+    } catch (error) {
+        console.error("[userRoutes] me/games failed", error?.message);
+        return res.status(500).json({ error: "Failed to load games" });
+    }
 });
 
 module.exports = router;

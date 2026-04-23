@@ -1,0 +1,87 @@
+@import "../PlayPage/PlayPage.css";
+
+.mp-scoreboard {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.mp-scoreboard-side {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(141, 180, 216, 0.22);
+}
+
+.mp-scoreboard-side.is-me {
+    border-color: rgba(255, 209, 102, 0.6);
+    background: rgba(255, 209, 102, 0.1);
+}
+
+.mp-scoreboard-side span {
+    color: #c1d5ea;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.mp-scoreboard-side strong {
+    font-size: 1.2rem;
+}
+
+.mp-scoreboard-side em {
+    font-style: normal;
+    color: #b8f2c5;
+    font-size: 0.76rem;
+}
+
+.mp-marker {
+    background: transparent !important;
+    border: none !important;
+}
+
+.mp-marker-inner {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.76rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.mp-marker-teammate {
+    background: #34d399;
+    opacity: 0.92;
+}
+
+.mp-finish-card {
+    text-align: center;
+}
+
+.mp-finish-card .finish-actions {
+    grid-template-columns: 1fr;
+    justify-items: center;
+}
+
+.mp-finish-card .finish-actions button {
+    width: min(220px, 100%);
+}
+
+.mp-finish-card .finish-actions.mp-finish-actions-two {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 780px) {
+    .mp-finish-card .finish-actions.mp-finish-actions-two {
+        grid-template-columns: 1fr;
+    }
+}
