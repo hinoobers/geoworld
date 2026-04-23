@@ -55,8 +55,9 @@ function buildStreetViewEmbedUrl(streetView) {
 
     const zoomRaw = Number(streetView.zoom);
     const safeZoom = Number.isFinite(zoomRaw) ? zoomRaw : 0;
-    console.log("[PlayPage] street view zoom", { raw: streetView.zoom, applied: safeZoom });
-    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${safeHeading},0,0,${safeZoom}&output=svembed`;
+    const fov = Math.max(10, Math.min(120, 180 / Math.pow(2, safeZoom)));
+    console.log("[PlayPage] street view zoom", { raw: streetView.zoom, applied: safeZoom, fov });
+    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${safeHeading},0,0,${fov}&output=svembed`;
 }
 
 const BASEMAP_URL =

@@ -89,8 +89,9 @@ function buildStreetViewEmbedUrl(streetView) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
     const heading = Number.isFinite(Number(streetView.rotation)) ? Number(streetView.rotation) : 0;
     const zoom = Number.isFinite(Number(streetView.zoom)) ? Number(streetView.zoom) : 0;
-    console.log("[MultiplayerGamePage] street view zoom", { raw: streetView.zoom, applied: zoom });
-    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${heading},0,0,${zoom}&output=svembed`;
+    const fov = Math.max(10, Math.min(120, 180 / Math.pow(2, zoom)));
+    console.log("[MultiplayerGamePage] street view zoom", { raw: streetView.zoom, applied: zoom, fov });
+    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${heading},0,0,${fov}&output=svembed`;
 }
 
 function GuessMapEvents({ onPick, disabled }) {
