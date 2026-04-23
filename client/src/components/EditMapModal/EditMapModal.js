@@ -6,6 +6,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api
 
 function positionFromRow(row) {
     return {
+        id: Number(row?.map_position_id ?? row?.id) || null,
         lat: String(row?.lat ?? row?.latitude ?? ""),
         lng: String(row?.lng ?? row?.longitude ?? ""),
         yaw: String(row?.yaw ?? row?.rotation ?? 0),
@@ -14,7 +15,7 @@ function positionFromRow(row) {
 }
 
 function emptyPosition() {
-    return { lat: "", lng: "", yaw: "0", pitch: "0" };
+    return { id: null, lat: "", lng: "", yaw: "0", pitch: "0" };
 }
 
 const EditMapModal = ({ map, onClose, onSaved }) => {
@@ -69,6 +70,7 @@ const EditMapModal = ({ map, onClose, onSaved }) => {
 
         const sanitized = positions
             .map((p) => ({
+                map_position_id: p.id || undefined,
                 lat: Number(p.lat),
                 lng: Number(p.lng),
                 yaw: Number(p.yaw || 0),
@@ -107,6 +109,12 @@ const EditMapModal = ({ map, onClose, onSaved }) => {
             });
             const body = await res.json().catch(() => null);
             if (!res.ok) throw new Error(body?.error || "Failed to save");
+
+            if (Number(body?.kept_locked_positions) > 0) {
+                setError(
+                    `Saved, but ${body.kept_locked_positions} position(s) were already used in games and couldn't be removed.`
+                );
+            }
 
             onSaved?.({
                 ...map,

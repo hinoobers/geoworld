@@ -3,6 +3,39 @@ const router = express.Router();
 const {query} = require("../database");
 const { middleware } = require("../auth");
 
+async function updateMapPositionWithFallbacks(mapId, positionId, position) {
+    const attempts = [
+        {
+            sql: "UPDATE map_positions SET latitude = ?, longitude = ?, yaw = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+        },
+        {
+            sql: "UPDATE map_positions SET latitude = ?, longitude = ?, rotation = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+        },
+        {
+            sql: "UPDATE map_positions SET lat = ?, lng = ?, yaw = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+        },
+        {
+            sql: "UPDATE map_positions SET lat = ?, lng = ?, rotation = ?, pitch = ? WHERE map_position_id = ? AND map_id = ?",
+            values: [position.lat, position.lng, position.yaw, position.pitch, positionId, mapId],
+        },
+    ];
+
+    let lastError = null;
+    for (const attempt of attempts) {
+        try {
+            await query(attempt.sql, attempt.values);
+            return;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    throw lastError || new Error("Failed to update map position");
+}
+
 async function insertMapPositionWithFallbacks(mapId, position) {
     const attempts = [
         {
@@ -195,6 +228,7 @@ router.put("/:id", middleware, async (req, res) => {
         }
         sanitizedPositions = map_positions
             .map((p) => ({
+                id: Number.isFinite(Number(p?.map_position_id)) ? Number(p.map_position_id) : null,
                 lat: Number(p?.lat ?? p?.latitude),
                 lng: Number(p?.lng ?? p?.longitude),
                 yaw: Number(p?.yaw ?? p?.rotation ?? 0),
@@ -226,14 +260,39 @@ router.put("/:id", middleware, async (req, res) => {
             await query(`UPDATE maps SET ${fields.join(", ")} WHERE id = ?`, values);
         }
 
+        let keptLocked = 0;
         if (sanitizedPositions) {
-            await query("DELETE FROM map_positions WHERE map_id = ?", [mapId]);
+            const existingRows = await query(
+                "SELECT map_position_id FROM map_positions WHERE map_id = ?",
+                [mapId]
+            );
+            const existingIds = new Set(existingRows.map((r) => Number(r.map_position_id)));
+            const submittedIds = new Set(
+                sanitizedPositions.map((p) => p.id).filter((id) => id !== null && existingIds.has(id))
+            );
+
             for (const position of sanitizedPositions) {
-                await insertMapPositionWithFallbacks(mapId, position);
+                if (position.id !== null && existingIds.has(position.id)) {
+                    await updateMapPositionWithFallbacks(mapId, position.id, position);
+                } else {
+                    await insertMapPositionWithFallbacks(mapId, position);
+                }
+            }
+
+            for (const existingId of existingIds) {
+                if (submittedIds.has(existingId)) continue;
+                try {
+                    await query(
+                        "DELETE FROM map_positions WHERE map_position_id = ? AND map_id = ?",
+                        [existingId, mapId]
+                    );
+                } catch {
+                    keptLocked += 1;
+                }
             }
         }
 
-        return res.json({ ok: true, map_id: mapId });
+        return res.json({ ok: true, map_id: mapId, kept_locked_positions: keptLocked });
     } catch (error) {
         console.error("[mapRoutes] update failed", error?.message);
         return res.status(500).json({ error: "Failed to update map" });
