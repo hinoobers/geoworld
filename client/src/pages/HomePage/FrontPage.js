@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Header from "../../components/Header/Header";
 import PlayMapModal from "../../components/PlayMapModal/PlayMapModal";
+import EditMapModal from "../../components/EditMapModal/EditMapModal";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import "./FrontPage.css";
@@ -22,6 +23,7 @@ const FrontPage = () => {
     const [dailyLoading, setDailyLoading] = useState(false);
     const [dailyInfo, setDailyInfo] = useState(null);
     const [selectedMap, setSelectedMap] = useState(null);
+    const [editingMap, setEditingMap] = useState(null);
 
     useEffect(() => {
         let isCancelled = false;
@@ -167,60 +169,6 @@ const FrontPage = () => {
         }
     };
 
-    const toggleMapVisibility = async (mapId, nextIsPublic) => {
-        if (!token) return;
-
-        setMyMaps((current) =>
-            current.map((map) =>
-                map.map_id === mapId ? { ...map, is_public: nextIsPublic } : map
-            )
-        );
-        setAllMaps((current) => {
-            const existing = current.find((map) => map.map_id === mapId);
-            const baseMap = existing || myMaps.find((map) => map.map_id === mapId);
-            if (!baseMap) return current;
-
-            const withoutMap = current.filter((map) => map.map_id !== mapId);
-            if (!nextIsPublic) return withoutMap;
-
-            return [...withoutMap, { ...baseMap, is_public: true }].sort(
-                (a, b) => Number(b.plays_count || 0) - Number(a.plays_count || 0)
-            );
-        });
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/maps/${encodeURIComponent(mapId)}/visibility`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ is_public: nextIsPublic }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to update visibility");
-            }
-        } catch {
-            setMyMaps((current) =>
-                current.map((map) =>
-                    map.map_id === mapId ? { ...map, is_public: !nextIsPublic } : map
-                )
-            );
-            setAllMaps((current) => {
-                const withoutMap = current.filter((map) => map.map_id !== mapId);
-                if (nextIsPublic) return withoutMap;
-
-                const reverted = myMaps.find((map) => map.map_id === mapId);
-                if (!reverted) return withoutMap;
-
-                return [...withoutMap, { ...reverted, is_public: true }].sort(
-                    (a, b) => Number(b.plays_count || 0) - Number(a.plays_count || 0)
-                );
-            });
-        }
-    };
-
     return (
         <div className="front-page">
             <Header />
@@ -317,10 +265,10 @@ const FrontPage = () => {
                                         className={`visibility-toggle ${map.is_public ? "is-public" : "is-private"}`}
                                         onClick={(event) => {
                                             event.stopPropagation();
-                                            toggleMapVisibility(map.map_id, !map.is_public);
+                                            setEditingMap(map);
                                         }}
                                     >
-                                        {map.is_public ? "Public" : "Private"}
+                                        Edit · {map.is_public ? "Public" : "Private"}
                                     </button>
                                     <h4>{map.name || "Untitled map"}</h4>
                                     <p>{Number(map.positions_count || 0)} locations</p>
@@ -345,6 +293,25 @@ const FrontPage = () => {
 
             {selectedMap ? (
                 <PlayMapModal map={selectedMap} onClose={() => setSelectedMap(null)} />
+            ) : null}
+
+            {editingMap ? (
+                <EditMapModal
+                    map={editingMap}
+                    onClose={() => setEditingMap(null)}
+                    onSaved={(updated) => {
+                        setMyMaps((list) =>
+                            list.map((m) => (m.map_id === updated.map_id ? { ...m, ...updated } : m))
+                        );
+                        setAllMaps((list) => {
+                            const without = list.filter((m) => m.map_id !== updated.map_id);
+                            if (!updated.is_public) return without;
+                            return [...without, updated].sort(
+                                (a, b) => Number(b.plays_count || 0) - Number(a.plays_count || 0)
+                            );
+                        });
+                    }}
+                />
             ) : null}
         </div>
     );

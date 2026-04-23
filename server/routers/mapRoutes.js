@@ -170,6 +170,76 @@ router.patch("/:id/visibility", middleware, async (req, res) => {
     }
 });
 
+router.put("/:id", middleware, async (req, res) => {
+    const mapId = Number(req.params.id);
+    if (!Number.isInteger(mapId) || mapId <= 0) {
+        return res.status(400).json({ error: "Invalid map id" });
+    }
+
+    const { name, description, is_public, map_positions } = req.body || {};
+
+    if (name !== undefined && (typeof name !== "string" || !name.trim())) {
+        return res.status(400).json({ error: "name must be a non-empty string" });
+    }
+    if (description !== undefined && description !== null && typeof description !== "string") {
+        return res.status(400).json({ error: "description must be a string" });
+    }
+    if (is_public !== undefined && typeof is_public !== "boolean") {
+        return res.status(400).json({ error: "is_public must be a boolean" });
+    }
+
+    let sanitizedPositions = null;
+    if (map_positions !== undefined) {
+        if (!Array.isArray(map_positions) || map_positions.length === 0) {
+            return res.status(400).json({ error: "map_positions must be a non-empty array" });
+        }
+        sanitizedPositions = map_positions
+            .map((p) => ({
+                lat: Number(p?.lat ?? p?.latitude),
+                lng: Number(p?.lng ?? p?.longitude),
+                yaw: Number(p?.yaw ?? p?.rotation ?? 0),
+                pitch: Number(p?.pitch ?? 0),
+            }))
+            .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+        if (sanitizedPositions.length !== map_positions.length) {
+            return res.status(400).json({ error: "Each map position must include numeric lat and lng" });
+        }
+    }
+
+    try {
+        const mapRows = await query("SELECT created_by FROM maps WHERE id = ?", [mapId]);
+        if (mapRows.length === 0) {
+            return res.status(404).json({ error: "Map not found" });
+        }
+        if (Number(mapRows[0].created_by) !== Number(req.user.id)) {
+            return res.status(403).json({ error: "Only the creator can edit this map" });
+        }
+
+        const fields = [];
+        const values = [];
+        if (name !== undefined) { fields.push("name = ?"); values.push(name.trim()); }
+        if (description !== undefined) { fields.push("description = ?"); values.push(description || null); }
+        if (is_public !== undefined) { fields.push("is_public = ?"); values.push(is_public ? 1 : 0); }
+
+        if (fields.length > 0) {
+            values.push(mapId);
+            await query(`UPDATE maps SET ${fields.join(", ")} WHERE id = ?`, values);
+        }
+
+        if (sanitizedPositions) {
+            await query("DELETE FROM map_positions WHERE map_id = ?", [mapId]);
+            for (const position of sanitizedPositions) {
+                await insertMapPositionWithFallbacks(mapId, position);
+            }
+        }
+
+        return res.json({ ok: true, map_id: mapId });
+    } catch (error) {
+        console.error("[mapRoutes] update failed", error?.message);
+        return res.status(500).json({ error: "Failed to update map" });
+    }
+});
+
 router.get("/:id", middleware, async (req, res) => {
     const { id } = req.params;
 

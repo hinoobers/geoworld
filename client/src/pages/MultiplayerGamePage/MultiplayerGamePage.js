@@ -14,6 +14,36 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || "http://localhost:3000";
 const GUEST_STORAGE_KEY = "geoworld-guest";
 
+const BASEMAP_URL =
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+const BASEMAP_ATTRIBUTION = "Tiles &copy; Esri";
+const WORLD_BOUNDS = [[-85, -180], [85, 180]];
+
+function BaseTileLayer() {
+    return (
+        <TileLayer
+            attribution={BASEMAP_ATTRIBUTION}
+            url={BASEMAP_URL}
+            minZoom={2}
+            maxZoom={18}
+        />
+    );
+}
+
+function MapInvalidateOnMount() {
+    const map = useMap();
+    useEffect(() => {
+        const t = setTimeout(() => map.invalidateSize(), 150);
+        const onResize = () => map.invalidateSize();
+        window.addEventListener("resize", onResize);
+        return () => {
+            clearTimeout(t);
+            window.removeEventListener("resize", onResize);
+        };
+    }, [map]);
+    return null;
+}
+
 const DEFAULT_MARKER_ICON = new L.Icon({
     iconRetinaUrl: markerIcon2xUrl,
     iconUrl: markerIconUrl,
@@ -324,11 +354,18 @@ const MultiplayerGamePage = () => {
                     </header>
 
                     <section className="result-map-wrap">
-                        <MapContainer center={actualPoint} zoom={3} scrollWheelZoom className="result-map">
-                            <TileLayer
-                                attribution='&copy; OpenStreetMap contributors'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
+                        <MapContainer
+                            center={actualPoint}
+                            zoom={3}
+                            minZoom={2}
+                            worldCopyJump
+                            maxBounds={WORLD_BOUNDS}
+                            maxBoundsViscosity={1.0}
+                            scrollWheelZoom
+                            className="result-map"
+                        >
+                            <BaseTileLayer />
+                            <MapInvalidateOnMount />
                             <Marker position={actualPoint} icon={DEFAULT_MARKER_ICON} />
                             {sideAGuess ? (
                                 <>
@@ -454,11 +491,18 @@ const MultiplayerGamePage = () => {
                 }}
             >
                 <div className="guess-map-shell">
-                    <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom className="guess-map" worldCopyJump>
-                        <TileLayer
-                            attribution='&copy; OpenStreetMap contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
+                    <MapContainer
+                        center={[20, 0]}
+                        zoom={2}
+                        minZoom={2}
+                        maxBounds={WORLD_BOUNDS}
+                        maxBoundsViscosity={1.0}
+                        scrollWheelZoom
+                        className="guess-map"
+                        worldCopyJump
+                    >
+                        <BaseTileLayer />
+                        <MapInvalidateOnMount />
                         <GuessMapEvents onPick={placePin} disabled={Boolean(myLocked)} />
                         {teammatePreviewPins}
                         {teammateLockedPins}

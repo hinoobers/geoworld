@@ -13,6 +13,34 @@ const DailyResultsPage = () => {
     const [leaderboard, setLeaderboard] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [nextMapLabel, setNextMapLabel] = useState("");
+
+    useEffect(() => {
+        const compute = () => {
+            const now = new Date();
+            const nextUtcMidnight = Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate() + 1
+            );
+            const msLeft = nextUtcMidnight - now.getTime();
+            if (msLeft <= 0) {
+                setNextMapLabel("any moment now");
+                return;
+            }
+            const totalMinutes = Math.floor(msLeft / 60000);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            if (hours >= 1) {
+                setNextMapLabel(`${hours}h ${minutes}m`);
+            } else {
+                setNextMapLabel(`${minutes}m`);
+            }
+        };
+        compute();
+        const id = setInterval(compute, 30_000);
+        return () => clearInterval(id);
+    }, []);
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -72,6 +100,9 @@ const DailyResultsPage = () => {
                     ) : (
                         <p>See how your score stacks up against everyone else today.</p>
                     )}
+                    {nextMapLabel ? (
+                        <p className="daily-results-next">New map in {nextMapLabel}</p>
+                    ) : null}
                     <div className="daily-results-actions">
                         <button type="button" onClick={() => navigate("/home")}>Back to Home</button>
                         {leaderboard?.map_id ? (

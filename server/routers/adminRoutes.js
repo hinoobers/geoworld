@@ -66,6 +66,12 @@ router.delete("/users/:id", async (req, res) => {
     }
 
     try {
+        const userMaps = await db.query("SELECT id FROM maps WHERE created_by = ?", [id]);
+        for (const row of userMaps) {
+            await db.query("DELETE FROM map_positions WHERE map_id = ?", [row.id]).catch(() => {});
+            await db.query("DELETE FROM maps WHERE id = ?", [row.id]).catch(() => {});
+        }
+
         const result = await db.query("DELETE FROM users WHERE id = ?", [id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "User not found" });
@@ -73,7 +79,7 @@ router.delete("/users/:id", async (req, res) => {
         res.json({ ok: true });
     } catch (error) {
         console.error("[admin] delete user failed", error?.message);
-        res.status(500).json({ error: "Failed to delete user" });
+        res.status(500).json({ error: error.message || "Failed to delete user" });
     }
 });
 

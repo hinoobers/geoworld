@@ -56,6 +56,37 @@ function buildStreetViewEmbedUrl(streetView) {
     return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${safeHeading},0,0,0&output=svembed`;
 }
 
+const BASEMAP_URL =
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+const BASEMAP_ATTRIBUTION = "Tiles &copy; Esri";
+const WORLD_BOUNDS = [[-85, -180], [85, 180]];
+
+function BaseTileLayer() {
+    return (
+        <TileLayer
+            attribution={BASEMAP_ATTRIBUTION}
+            url={BASEMAP_URL}
+            minZoom={2}
+            maxZoom={18}
+            noWrap={false}
+        />
+    );
+}
+
+function MapInvalidateOnMount() {
+    const map = useMap();
+    useEffect(() => {
+        const t = setTimeout(() => map.invalidateSize(), 150);
+        const onResize = () => map.invalidateSize();
+        window.addEventListener("resize", onResize);
+        return () => {
+            clearTimeout(t);
+            window.removeEventListener("resize", onResize);
+        };
+    }, [map]);
+    return null;
+}
+
 function GuessMapEvents({ onPick }) {
     useMapEvents({
         click(event) {
@@ -377,11 +408,18 @@ const PlayPage = () => {
                     </header>
 
                     <section className="result-map-wrap">
-                        <MapContainer center={actualPoint || guessedPoint || [0, 0]} zoom={3} scrollWheelZoom className="result-map">
-                            <TileLayer
-                                attribution='&copy; OpenStreetMap contributors'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
+                        <MapContainer
+                            center={actualPoint || guessedPoint || [0, 0]}
+                            zoom={3}
+                            minZoom={2}
+                            worldCopyJump
+                            maxBounds={WORLD_BOUNDS}
+                            maxBoundsViscosity={1.0}
+                            scrollWheelZoom
+                            className="result-map"
+                        >
+                            <BaseTileLayer />
+                            <MapInvalidateOnMount />
                             {guessedPoint && actualPoint ? <ResultMap guessPoint={guessedPoint} actualPoint={actualPoint} /> : null}
                             {guessedPoint ? <Marker position={guessedPoint} icon={DEFAULT_MARKER_ICON} /> : null}
                             {actualPoint ? <Marker position={actualPoint} icon={DEFAULT_MARKER_ICON} /> : null}
@@ -466,11 +504,18 @@ const PlayPage = () => {
                     {game?.status === "active" && !showResultScreen ? (
                         <form className="hud-panel hud-map" onSubmit={handleGuessSubmit}>
                             <div className="guess-map-shell">
-                                <MapContainer center={guessedLocation || [20, 0]} zoom={2} scrollWheelZoom className="guess-map">
-                                    <TileLayer
-                                        attribution='&copy; OpenStreetMap contributors'
-                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                    />
+                                <MapContainer
+                                    center={guessedLocation || [20, 0]}
+                                    zoom={2}
+                                    minZoom={2}
+                                    worldCopyJump
+                                    maxBounds={WORLD_BOUNDS}
+                                    maxBoundsViscosity={1.0}
+                                    scrollWheelZoom
+                                    className="guess-map"
+                                >
+                                    <BaseTileLayer />
+                                    <MapInvalidateOnMount />
                                     <GuessMapEvents
                                         onPick={({ lat, lng }) => {
                                             setGuessLat(lat.toFixed(6));

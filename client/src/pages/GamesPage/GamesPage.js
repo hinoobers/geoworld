@@ -136,13 +136,15 @@ const GamesPage = () => {
                                 </div>
 
                                 <p className="games-meta-line">
-                                    {game.mode} · {game.status}
+                                    {game.mode} · {game.status === "abandoned" ? "Not finished" : game.status}
                                 </p>
 
                                 <div className="games-stats-grid">
                                     <p><strong>Score:</strong> {Number(game.score || 0).toLocaleString()}</p>
                                     <p><strong>Rounds:</strong> {Number(game.total_rounds || 0)}</p>
-                                    <p><strong>Opponent:</strong> {game.opponent_name || "-"}</p>
+                                    {game.mode === "multiplayer" && game.opponent_name ? (
+                                        <p><strong>Opponent:</strong> {game.opponent_name}</p>
+                                    ) : null}
                                     <p><strong>Played:</strong> {game.created_at ? new Date(game.created_at).toLocaleString() : "-"}</p>
                                 </div>
                             </article>

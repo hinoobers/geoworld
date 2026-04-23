@@ -183,6 +183,52 @@ router.get("/me/games", middleware, async (req, res) => {
             [singleNeedle, singleNeedle, multiNeedle, multiNeedle]
         );
 
+        const opponentUserIds = new Set();
+        for (const row of rows) {
+            const oneSide = parseSide(row.one_side);
+            const secondSide = parseSide(row.second_side);
+            const { other } = findMySideAndOpponent(oneSide, secondSide, userIdNumeric);
+            if (!other) continue;
+            if (Array.isArray(other.user_ids)) {
+                for (const uid of other.user_ids) {
+                    const n = Number(uid);
+                    if (n) opponentUserIds.add(n);
+                }
+            } else if (other.side) {
+                const n = Number(other.side);
+                if (n) opponentUserIds.add(n);
+            }
+        }
+
+        let usernameById = new Map();
+        if (opponentUserIds.size > 0) {
+            const ids = Array.from(opponentUserIds);
+            const placeholders = ids.map(() => "?").join(",");
+            const userRows = await db.query(
+                `SELECT id, username FROM users WHERE id IN (${placeholders})`,
+                ids
+            );
+            usernameById = new Map(userRows.map((u) => [Number(u.id), u.username]));
+        }
+
+        const resolveOpponentName = (opponentSide) => {
+            if (!opponentSide) return null;
+            if (Array.isArray(opponentSide.user_ids) && opponentSide.user_ids.length > 0) {
+                const names = opponentSide.user_ids
+                    .map((uid) => usernameById.get(Number(uid)))
+                    .filter(Boolean);
+                if (names.length > 0) return names.join(", ");
+            }
+            if (opponentSide.side) {
+                const name = usernameById.get(Number(opponentSide.side));
+                if (name) return name;
+            }
+            if (opponentSide.display_name && opponentSide.display_name !== opponentSide.side_label) {
+                return opponentSide.display_name;
+            }
+            return null;
+        };
+
         const games = rows
             .map((row) => {
                 const oneSide = parseSide(row.one_side);
@@ -198,7 +244,17 @@ router.get("/me/games", middleware, async (req, res) => {
 
                 const score = Number(userSide.score) || 0;
                 const totalRounds = Number(userSide.total_rounds) || 0;
-                const status = userSide.status || "unknown";
+                let status = userSide.status || "unknown";
+
+                if (status === "active") {
+                    const lastUpdateMs =
+                        Date.parse(userSide.updated_at || "") ||
+                        (row.created_at ? new Date(row.created_at).getTime() : 0);
+                    const staleMs = 30 * 60 * 1000;
+                    if (lastUpdateMs && Date.now() - lastUpdateMs > staleMs) {
+                        status = "abandoned";
+                    }
+                }
 
                 let result = null;
                 if (row.mode === "multiplayer" && opponentSide) {
@@ -211,7 +267,7 @@ router.get("/me/games", middleware, async (req, res) => {
                 }
 
                 const opponentName = row.mode === "multiplayer"
-                    ? opponentSide?.display_name || opponentSide?.side_label || null
+                    ? resolveOpponentName(opponentSide)
                     : null;
 
                 return {
