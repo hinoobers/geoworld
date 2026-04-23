@@ -13,6 +13,7 @@ import GamesPage from './pages/GamesPage/GamesPage';
 import LobbyPage from './pages/LobbyPage/LobbyPage';
 import MultiplayerGamePage from './pages/MultiplayerGamePage/MultiplayerGamePage';
 import RequireUser from './components/RequireUser/RequireUser';
+import AdminPage from './pages/AdminPage/AdminPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/daily-results" element={<RequireUser><DailyResultsPage /></RequireUser>} />
           <Route path="/lobby/:code" element={<LobbyPage />} />
           <Route path="/multiplayer/:code" element={<MultiplayerGamePage />} />
+          <Route path="/admin" element={<RequireUser><AdminPage /></RequireUser>} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>

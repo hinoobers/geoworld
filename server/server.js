@@ -5,6 +5,7 @@ const { Server } = require("socket.io");
 const { verifyToken } = require("./auth");
 const lobbyHandler = require("./lobbyHandler");
 const multiplayerGameHandler = require("./multiplayerGameHandler");
+const db = require("./database");
 
 const app = express();
 const server = http.createServer(app);
@@ -33,6 +34,23 @@ app.use("/api/users", require("./routers/userRoutes"));
 app.use("/api/maps", require("./routers/mapRoutes"));
 app.use("/api/games", require("./routers/gameRoutes"));
 app.use("/api/lobbies", require("./routers/lobbyRoutes"));
+app.use("/api/admin", require("./routers/adminRoutes"));
+
+app.get("/api/stats", async (req, res) => {
+    try {
+        const [users] = await db.query("SELECT COUNT(*) AS count FROM users");
+        const [games] = await db.query("SELECT COUNT(*) AS count FROM games");
+        const [maps] = await db.query("SELECT COUNT(*) AS count FROM maps");
+        res.json({
+            users: Number(users?.count) || 0,
+            games: Number(games?.count) || 0,
+            maps: Number(maps?.count) || 0,
+        });
+    } catch (error) {
+        console.error("[stats] failed", error?.message);
+        res.status(500).json({ error: "Failed to load stats" });
+    }
+});
 
 io.use((socket, next) => {
     const token = socket.handshake.auth?.token;

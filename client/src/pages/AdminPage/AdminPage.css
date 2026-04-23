@@ -1,0 +1,132 @@
+.admin-page {
+    padding: 24px 32px 64px;
+    color: white;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.admin-page h1 {
+    margin-bottom: 16px;
+}
+
+.admin-page h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.admin-section {
+    margin-top: 28px;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+
+.admin-error {
+    background-color: rgba(180, 40, 40, 0.85);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.admin-overview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.admin-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 110px;
+    padding: 14px 18px;
+    background-color: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.5);
+    border-radius: 10px;
+}
+
+.admin-stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: blueviolet;
+}
+
+.admin-stat-label {
+    font-size: 12px;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-table th {
+    font-weight: 600;
+    opacity: 0.8;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-role {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-role-admin {
+    background-color: blueviolet;
+    color: white;
+}
+
+.admin-role-user {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.admin-actions button {
+    padding: 6px 12px;
+    font-size: 13px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: blueviolet;
+    color: white;
+}
+
+.admin-actions button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.admin-actions .admin-danger {
+    background-color: #c23030;
+}

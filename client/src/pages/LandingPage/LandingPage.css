@@ -7,8 +7,43 @@
 .content {
     flex: 1; /* takes remaining space */
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 24px;
+}
+
+.landing-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+}
+
+.landing-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    padding: 16px 20px;
+    background-color: rgba(0, 0, 0, 0.85);
+    color: white;
+    border-radius: 12px;
+}
+
+.landing-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: blueviolet;
+}
+
+.landing-stat-label {
+    font-size: 13px;
+    opacity: 0.8;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 .landing-page {
     display: flex;

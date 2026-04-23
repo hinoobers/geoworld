@@ -17,7 +17,7 @@ function hasGuestIdentity() {
 
 const Header = () => {
     const navigate = useNavigate();
-    const { isLoggedIn, user, logout } = useAuth();
+    const { isLoggedIn, user, logout, isAdmin } = useAuth();
 
     const handleAuthAction = () => {
         if (isLoggedIn) {
@@ -45,6 +45,9 @@ const Header = () => {
                     <>
                         <div className="geo-header-section" onClick={() => navigate("/community")}>Maps</div>
                         <div className="geo-header-section" onClick={() => navigate("/games")}>Games</div>
+                        {isAdmin && (
+                            <div className="geo-header-section" onClick={() => navigate("/admin")}>Admin</div>
+                        )}
                         <button type="button" onClick={handleAuthAction}>
                             Log out
                         </button>

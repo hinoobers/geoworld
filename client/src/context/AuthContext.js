@@ -44,6 +44,7 @@ function decodeToken(token) {
             id: decodedPayload.id,
             username: decodedPayload.username,
             email: decodedPayload.email,
+            role: decodedPayload.role || "user",
         };
     } catch {
         return null;
@@ -120,6 +121,7 @@ export function AuthProvider({ children }) {
             token: auth?.token ?? null,
             user: auth?.user ?? null,
             isLoggedIn: Boolean(auth?.token),
+            isAdmin: auth?.user?.role === "admin",
             login,
             register,
             logout,

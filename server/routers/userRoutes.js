@@ -51,7 +51,7 @@ router.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Email and password must be strings" });
     }
 
-    const user = await db.query("SELECT id, username, email, password FROM users WHERE email = ?", [email]);
+    const user = await db.query("SELECT id, username, email, password, role FROM users WHERE email = ?", [email]);
     if (user.length === 0) {
         // we don't want to reveal whether account exists, so use same error message for both cases
         return res.status(400).json({ error: "Invalid email or password" });
