@@ -16,6 +16,7 @@ import RequireUser from './components/RequireUser/RequireUser';
 import AdminPage from './pages/AdminPage/AdminPage';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
 import TermsOfService from './pages/Legal/TermsOfService';
+import Settings from './pages/Account/Settings/Settings';
 
 function App() {
   return (
@@ -27,8 +28,10 @@ function App() {
           <Route path="/play" element={<RequireUser><PlayPage /></RequireUser>} />
           <Route path="/maps/create" element={<RequireUser><CreateMapPage /></RequireUser>} />
           <Route path="/community" element={<RequireUser><CommunityMapsPage /></RequireUser>} />
+          <Route path="/leaderboard" element={<RequireUser><LeaderboardPage /></RequireUser>} />
           <Route path="/games" element={<RequireUser><GamesPage /></RequireUser>} />
           <Route path="/daily-results" element={<RequireUser><DailyResultsPage /></RequireUser>} />
+          <Route path="/account-settings" element={<RequireUser><Settings /></RequireUser>} />
           <Route path="/lobby/:code" element={<LobbyPage />} />
           <Route path="/multiplayer/:code" element={<MultiplayerGamePage />} />
           <Route path="/admin" element={<RequireUser><AdminPage /></RequireUser>} />

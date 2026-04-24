@@ -75,3 +75,7 @@
 	background-color: blueviolet;
 	color: white;
 }
+
+.forgot-password-link:hover {
+	text-decoration: underline;
+}

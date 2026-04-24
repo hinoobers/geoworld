@@ -47,8 +47,10 @@ const Header = () => {
             <div className="geo-header-actions">
                 {isLoggedIn ? (
                     <>
+                        <div className="geo-header-section" onClick={() => navigate("/leaderboard")}>Leaderboard</div>
                         <div className="geo-header-section" onClick={() => navigate("/community")}>Maps</div>
                         <div className="geo-header-section" onClick={() => navigate("/games")}>Games</div>
+                        <div className="geo-header-section" onClick={() => navigate("/account-settings")}>Account</div>
                         {isAdmin && (
                             <div className="geo-header-section" onClick={() => navigate("/admin")}>Admin</div>
                         )}

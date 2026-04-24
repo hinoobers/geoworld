@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../database");
 const bcrypt = require("bcrypt");
-const { generateToken, middleware } = require("../auth");
+const { generateToken, middleware, verifyToken } = require("../auth");
 const {sendMail} = require("../mailer");
 
 function parseSide(raw) {
@@ -129,27 +129,53 @@ router.post("/reset-password", async (req, res) => {
         return res.status(400).json({ error: "Invalid email" });
     }
 
-    const user = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    const user = await db.query("SELECT id, email FROM users WHERE email = ?", [email]);
     if (user.length === 0) {
         // we don't want to reveal whether account exists, so use same response for both cases
         return res.json({ message: "If an account with that email exists, a password reset link has been sent" });
     }
 
-    const resetToken = generateToken({ id: user[0].id }, "1h");
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const resetToken = generateToken({ id: user[0].id, email: user[0].email }, "1h");
+    const resetLink = `https://geoworld.pnglin.byenoob.com/api/users/reset-password/${resetToken}`;
 
     try {
-        await sendMail({
-            to: email,
-            subject: "GeoWorld Password Reset",
-            text: `You requested a password reset for your GeoWorld account. Click the link below to reset your password:\n\n${resetLink}\n\nIf you didn't request this, you can ignore this email.`,
-        });
+        await sendMail(
+            email,
+            "GeoWorld Password Reset",
+            `You requested a password reset for your GeoWorld account. Click the link below to reset your password:\n\n${resetLink}\n\nIf you didn't request this, you can ignore this email.`
+        );
         return res.json({ message: "If an account with that email exists, a password reset link has been sent" });
     } catch (error) {
         console.error("Failed to send password reset email", error);
         // we don't want to reveal email sending failure, so return same response
         return res.json({ message: "If an account with that email exists, a password reset link has been sent" });
     }
+});
+
+router.get("/reset-password/:token", async (req, res) => {
+    const { token } = req.params;
+    if (!token) {
+        return res.status(400).json({ error: "Token is required" });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.id) {
+        return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    const newPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const result = await db.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, decoded.id]);
+    if (result.affectedRows === 0) {
+        return res.status(400).send("Failed to reset password");
+    }
+    
+    await sendMail(
+        decoded.email,
+        "GeoWorld Password Reset Successful",
+        `Your password has been reset. Your new temporary password is: ${newPassword}\n\nPlease log in and change your password immediately.`
+    );
+    return res.send("Password reset successful, please check your email for the new password");
 });
 
 function findMySideAndOpponent(oneSide, secondSide, userIdNumeric) {
