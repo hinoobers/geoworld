@@ -101,6 +101,20 @@ const AdminPage = () => {
         loadAll();
     };
 
+    const handleToggleForcedPopular = async (id, next) => {
+        setActionError("");
+        const res = await authedFetch(`/maps/${id}/forced-popular`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_forced_popular: next }),
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => null);
+            setActionError(body?.error || "Failed to update map");
+            return;
+        }
+        setMaps((prev) => prev.map((m) => (m.id === id ? { ...m, is_forced_popular: next ? 1 : 0 } : m)));
+    };
+
     const handleDeleteMap = async (id, name) => {
         if (!window.confirm(`Delete map "${name}"? This cannot be undone.`)) return;
         setActionError("");
@@ -221,6 +235,7 @@ const AdminPage = () => {
                                             <th>Name</th>
                                             <th>Creator</th>
                                             <th>Daily</th>
+                                            <th>Forced popular</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -231,6 +246,18 @@ const AdminPage = () => {
                                                 <td>{m.name}</td>
                                                 <td>{m.creator_username || `#${m.created_by ?? "?"}`}</td>
                                                 <td>{m.is_daily ? "Yes" : ""}</td>
+                                                <td>
+                                                    <label className="admin-switch">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(m.is_forced_popular)}
+                                                            onChange={(e) =>
+                                                                handleToggleForcedPopular(m.id, e.target.checked)
+                                                            }
+                                                        />
+                                                        {m.is_forced_popular ? "On" : "Off"}
+                                                    </label>
+                                                </td>
                                                 <td className="admin-actions">
                                                     <button
                                                         type="button"

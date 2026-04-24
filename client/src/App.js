@@ -14,6 +14,8 @@ import LobbyPage from './pages/LobbyPage/LobbyPage';
 import MultiplayerGamePage from './pages/MultiplayerGamePage/MultiplayerGamePage';
 import RequireUser from './components/RequireUser/RequireUser';
 import AdminPage from './pages/AdminPage/AdminPage';
+import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
+import TermsOfService from './pages/Legal/TermsOfService';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
           <Route path="/lobby/:code" element={<LobbyPage />} />
           <Route path="/multiplayer/:code" element={<MultiplayerGamePage />} />
           <Route path="/admin" element={<RequireUser><AdminPage /></RequireUser>} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>

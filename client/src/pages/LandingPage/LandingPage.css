@@ -38,6 +38,24 @@
     color: blueviolet;
 }
 
+.landing-footer {
+    padding: 16px 20px 22px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    color: #b6b1e0;
+    font-size: 0.92rem;
+}
+
+.landing-footer a {
+    color: #c9a4ff;
+    text-decoration: none;
+}
+
+.landing-footer a:hover {
+    text-decoration: underline;
+}
+
 .landing-stat-label {
     font-size: 13px;
     opacity: 0.8;

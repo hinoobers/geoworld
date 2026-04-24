@@ -259,3 +259,27 @@
         padding-right: 14px;
     }
 }
+.map-panel-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+    color: #dad8f5;
+    font-size: 0.9rem;
+}
+
+.map-panel-pagination button {
+    padding: 6px 14px;
+    border: 1px solid rgba(201, 194, 255, 0.35);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #f5f6ff;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.map-panel-pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

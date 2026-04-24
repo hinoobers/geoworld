@@ -13,6 +13,46 @@ function parseSide(raw) {
     }
 }
 
+// Very bad words — racial slurs, hard slurs, CSAM references, etc.
+// Regular swearing (fuck, shit, damn) is allowed; this is only for hate/slur/abuse terms.
+const BANNED_USERNAME_TERMS = [
+    "nigger", "nigga", "n1gger", "n1gga",
+    "faggot", "fag", "f4ggot",
+    "retard", "ret4rd",
+    "tranny", "tr4nny",
+    "kike",
+    "chink",
+    "spic",
+    "gook",
+    "wetback",
+    "coon",
+    "paki",
+    "kys", "killyourself",
+    "hitler", "heilhitler",
+    "nazi", "naz1",
+    "loli",
+    "pedo", "pedophile",
+    "rape", "rapist",
+    "cp",
+];
+
+function normalizeForModeration(value) {
+    return String(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "")
+        .replace(/0/g, "o")
+        .replace(/1/g, "i")
+        .replace(/3/g, "e")
+        .replace(/4/g, "a")
+        .replace(/5/g, "s")
+        .replace(/7/g, "t");
+}
+
+function containsBannedTerm(value) {
+    const normalized = normalizeForModeration(value);
+    return BANNED_USERNAME_TERMS.some((term) => normalized.includes(normalizeForModeration(term)));
+}
+
 router.post("/register", async (req, res) => {
     const { email, username, password } = req.body;
     if (!email || !username || !password) {
@@ -21,6 +61,17 @@ router.post("/register", async (req, res) => {
 
     if(typeof email !== "string" || typeof username !== "string" || typeof password !== "string") {
         return res.status(400).json({ error: "Email, username, and password must be strings" });
+    }
+
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length < 2 || trimmedUsername.length > 24) {
+        return res.status(400).json({ error: "Username must be between 2 and 24 characters" });
+    }
+    if (!/^[A-Za-z0-9_.\-]+$/.test(trimmedUsername)) {
+        return res.status(400).json({ error: "Username can only use letters, numbers, and _.-" });
+    }
+    if (containsBannedTerm(trimmedUsername)) {
+        return res.status(400).json({ error: "Please choose a different username" });
     }
 
     if(password.length < 6) {

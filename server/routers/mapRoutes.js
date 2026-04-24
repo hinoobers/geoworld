@@ -162,6 +162,7 @@ router.get("/list", middleware, async (req, res) => {
                     user_id: map.user_id ?? map.created_by ?? null,
                     created_by: map.created_by ?? map.user_id ?? null,
                     is_public: Boolean(map.is_public),
+                    is_forced_popular: Boolean(map.is_forced_popular),
                     positions_count: Number(rows[0]?.positions_count || 0),
                     plays_count: Number(gamesRows[0]?.plays_count || 0),
                 };

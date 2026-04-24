@@ -95,7 +95,8 @@ router.delete("/users/:id", async (req, res) => {
 router.get("/maps", async (req, res) => {
     try {
         const rows = await db.query(
-            `SELECT m.id, m.name, m.description, m.is_daily, m.created_by, u.username AS creator_username
+            `SELECT m.id, m.name, m.description, m.is_daily, m.is_public, m.is_forced_popular,
+                    m.created_by, u.username AS creator_username
              FROM maps m
              LEFT JOIN users u ON u.id = m.created_by
              ORDER BY m.id DESC
@@ -105,6 +106,27 @@ router.get("/maps", async (req, res) => {
     } catch (error) {
         console.error("[admin] list maps failed", error?.message);
         res.status(500).json({ error: "Failed to load maps" });
+    }
+});
+
+router.patch("/maps/:id/forced-popular", async (req, res) => {
+    const id = Number(req.params.id);
+    const { is_forced_popular } = req.body || {};
+    if (!id || typeof is_forced_popular !== "boolean") {
+        return res.status(400).json({ error: "Invalid id or is_forced_popular" });
+    }
+    try {
+        const result = await db.query(
+            "UPDATE maps SET is_forced_popular = ? WHERE id = ?",
+            [is_forced_popular ? 1 : 0, id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Map not found" });
+        }
+        res.json({ ok: true });
+    } catch (error) {
+        console.error("[admin] toggle forced popular failed", error?.message);
+        res.status(500).json({ error: "Failed to update map" });
     }
 });
 

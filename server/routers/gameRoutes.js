@@ -60,15 +60,24 @@ function parseSide(raw) {
 async function hasPlayedDailyToday(userId, mapId) {
     const needle = `%"side":"${userId}"%`;
     const rows = await db.query(
-        `SELECT 1
+        `SELECT one_side, second_side
          FROM games
          WHERE map_id = ?
            AND (one_side LIKE ? OR second_side LIKE ?)
-           AND DATE(created_at) = CURDATE()
-         LIMIT 1`,
+           AND DATE(created_at) = CURDATE()`,
         [mapId, needle, needle]
     );
-    return rows.length > 0;
+
+    const userIdStr = String(userId);
+    for (const row of rows) {
+        for (const raw of [row.one_side, row.second_side]) {
+            const side = parseSide(raw);
+            if (!side) continue;
+            if (String(side.side) !== userIdStr) continue;
+            if (side.status === "completed") return true;
+        }
+    }
+    return false;
 }
 
 router.get("/daily-challenge", middleware, async (req, res) => {

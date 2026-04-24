@@ -81,7 +81,11 @@ const CommunityMapsPage = () => {
 
         const sorted = [...filtered];
         if (sort === "plays") {
-            sorted.sort((a, b) => Number(b.plays_count || 0) - Number(a.plays_count || 0));
+            sorted.sort((a, b) => {
+                const forcedDiff = Number(b.is_forced_popular || 0) - Number(a.is_forced_popular || 0);
+                if (forcedDiff !== 0) return forcedDiff;
+                return Number(b.plays_count || 0) - Number(a.plays_count || 0);
+            });
         } else if (sort === "name") {
             sorted.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
         } else if (sort === "positions") {

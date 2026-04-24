@@ -7,6 +7,8 @@ const { verifyToken } = require("./auth");
 const lobbyHandler = require("./lobbyHandler");
 const multiplayerGameHandler = require("./multiplayerGameHandler");
 const db = require("./database");
+const swaggerUi = require("swagger-ui-express");
+const openApiSpec = require("./openapi.json");
 
 const app = express();
 const server = http.createServer(app);
@@ -37,6 +39,11 @@ app.use("/api/maps", require("./routers/mapRoutes"));
 app.use("/api/games", require("./routers/gameRoutes"));
 app.use("/api/lobbies", require("./routers/lobbyRoutes"));
 app.use("/api/admin", require("./routers/adminRoutes"));
+
+app.get("/api/docs/openapi.json", (req, res) => res.json(openApiSpec));
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, {
+    customSiteTitle: "GeoWorld API Docs",
+}));
 
 const { userOrGuestMiddleware } = require("./auth");
 

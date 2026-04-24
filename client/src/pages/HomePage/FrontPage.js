@@ -24,6 +24,8 @@ const FrontPage = () => {
     const [dailyInfo, setDailyInfo] = useState(null);
     const [selectedMap, setSelectedMap] = useState(null);
     const [editingMap, setEditingMap] = useState(null);
+    const [myMapsPage, setMyMapsPage] = useState(1);
+    const MY_MAPS_PER_PAGE = 5;
 
     useEffect(() => {
         let isCancelled = false;
@@ -57,7 +59,11 @@ const FrontPage = () => {
                 const popularMaps = Array.isArray(responseBody)
                     ? responseBody
                         .filter((map) => Boolean(map.is_public))
-                        .sort((a, b) => Number(b.plays_count || 0) - Number(a.plays_count || 0))
+                        .sort((a, b) => {
+                            const forcedDiff = Number(b.is_forced_popular || 0) - Number(a.is_forced_popular || 0);
+                            if (forcedDiff !== 0) return forcedDiff;
+                            return Number(b.plays_count || 0) - Number(a.plays_count || 0);
+                        })
                     : [];
 
                 if (!isCancelled) {
@@ -223,7 +229,7 @@ const FrontPage = () => {
                             <button type="button" onClick={() => navigate("/community")}>View all</button>
                         </div>
                         <div className="map-list">
-                            {allMaps.slice(0, 2).map((map, index) => (
+                            {allMaps.slice(0, 5).map((map, index) => (
                                 <article
                                     className={`map-card ${index % 2 === 0 ? "map-card-a" : "map-card-b"} map-card-clickable`}
                                     key={`popular-map-${map.map_id}`}
@@ -254,7 +260,9 @@ const FrontPage = () => {
                             <button type="button" onClick={() => navigate("/maps/create")}>Create new map</button>
                         </div>
                         <div className="map-list">
-                            {myMaps.map((map) => (
+                            {myMaps
+                                .slice((myMapsPage - 1) * MY_MAPS_PER_PAGE, myMapsPage * MY_MAPS_PER_PAGE)
+                                .map((map) => (
                                 <article
                                     className="map-card map-card-c map-card-clickable"
                                     key={`my-map-${map.map_id}`}
@@ -287,6 +295,32 @@ const FrontPage = () => {
                                 </article>
                             ) : null}
                         </div>
+
+                        {myMaps.length > MY_MAPS_PER_PAGE ? (
+                            <div className="map-panel-pagination">
+                                <button
+                                    type="button"
+                                    onClick={() => setMyMapsPage((p) => Math.max(1, p - 1))}
+                                    disabled={myMapsPage <= 1}
+                                >
+                                    Prev
+                                </button>
+                                <span>
+                                    Page {myMapsPage} / {Math.max(1, Math.ceil(myMaps.length / MY_MAPS_PER_PAGE))}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setMyMapsPage((p) =>
+                                            Math.min(Math.ceil(myMaps.length / MY_MAPS_PER_PAGE), p + 1)
+                                        )
+                                    }
+                                    disabled={myMapsPage >= Math.ceil(myMaps.length / MY_MAPS_PER_PAGE)}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        ) : null}
                     </div>
                 </section>
             </main>

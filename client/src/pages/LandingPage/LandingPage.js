@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../../components/Header/Header";
 import { useAuth } from "../../context/AuthContext";
 import "./LandingPage.css";
@@ -56,7 +56,7 @@ const LandingPage = () => {
                         <span className="landing-stat-value">
                             {stats ? stats.users.toLocaleString() : "—"}
                         </span>
-                        <span className="landing-stat-label">Players</span>
+                        <span className="landing-stat-label">Users</span>
                     </div>
                     <div className="landing-stat">
                         <span className="landing-stat-value">
@@ -72,6 +72,12 @@ const LandingPage = () => {
                     </div>
                 </div>
             </div>
+
+            <footer className="landing-footer">
+                <Link to="/privacy">Privacy Policy</Link>
+                <span>·</span>
+                <Link to="/terms">Terms of Service</Link>
+            </footer>
         </div>
     );
 };
