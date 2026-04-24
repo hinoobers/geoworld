@@ -129,10 +129,14 @@ router.post("/reset-password", async (req, res) => {
         return res.status(400).json({ error: "Invalid email" });
     }
 
-    const user = await db.query("SELECT id, email FROM users WHERE email = ?", [email]);
+    const user = await db.query("SELECT id, email, role FROM users WHERE email = ?", [email]);
     if (user.length === 0) {
         // we don't want to reveal whether account exists, so use same response for both cases
         return res.json({ message: "If an account with that email exists, a password reset link has been sent" });
+    }
+
+    if(user[0].role === "admin") {
+        return res.json({ message: "For security reasons, password resets are not allowed for admin accounts." });
     }
 
     const resetToken = generateToken({ id: user[0].id, email: user[0].email }, "1h");
