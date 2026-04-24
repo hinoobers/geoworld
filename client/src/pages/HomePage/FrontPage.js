@@ -167,7 +167,23 @@ const FrontPage = () => {
                 throw new Error(responseBody?.error || "Failed to load daily challenge");
             }
 
-            navigate(`/play?map=${encodeURIComponent(String(responseBody.map_id))}`);
+            const createRes = await fetch(`${API_BASE_URL}/games/create-game`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    map_id: Number(responseBody.map_id),
+                    mode: "singleplayer",
+                    allow_move: false,
+                    allow_zoom: true,
+                    allow_look: true,
+                }),
+            });
+            const createBody = await createRes.json().catch(() => null);
+            if (!createRes.ok) throw new Error(createBody?.error || "Failed to start daily");
+            navigate(`/play?game=${encodeURIComponent(createBody.game_id)}`);
         } catch (error) {
             setDailyError(error.message || "Failed to start daily challenge");
         } finally {

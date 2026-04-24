@@ -367,4 +367,73 @@ router.get("/me/games", middleware, async (req, res) => {
     }
 });
 
+router.get("/leaderboard", async (req, res) => {
+    try {
+        const games = await db.query("SELECT mode, one_side, second_side FROM games");
+        const perUser = new Map();
+
+        const addForUser = (uid, scoreShare, totalRounds) => {
+            if (!uid || totalRounds <= 0) return;
+            const entry = perUser.get(uid) || { score: 0, max: 0, games_played: 0 };
+            entry.score += scoreShare;
+            entry.max += totalRounds * 5000;
+            entry.games_played += 1;
+            perUser.set(uid, entry);
+        };
+
+        const recordSide = (side, mode) => {
+            if (!side || side.status !== "completed") return;
+            const totalRounds = Number(side.total_rounds) || 0;
+            if (totalRounds <= 0) return;
+
+            if (mode === "multiplayer" && Array.isArray(side.user_ids) && side.user_ids.length > 0) {
+                const n = side.user_ids.length;
+                const share = (Number(side.score) || 0) / n;
+                for (const uid of side.user_ids) addForUser(Number(uid), share, totalRounds);
+            } else if (side.side) {
+                addForUser(Number(side.side), Number(side.score) || 0, totalRounds);
+            }
+        };
+
+        for (const row of games) {
+            recordSide(parseSide(row.one_side), row.mode);
+            recordSide(parseSide(row.second_side), row.mode);
+        }
+
+        const ids = [...perUser.keys()].filter(Boolean);
+        if (ids.length === 0) return res.json([]);
+        const placeholders = ids.map(() => "?").join(",");
+        const users = await db.query(
+            `SELECT id, username, is_restricted FROM users WHERE id IN (${placeholders})`,
+            ids
+        );
+        const usernameById = new Map(
+            users.filter((u) => Number(u.is_restricted) !== 1).map((u) => [Number(u.id), u.username])
+        );
+
+        const SMOOTH_ROUNDS = 20;
+        const entries = [];
+        for (const [uid, stats] of perUser.entries()) {
+            const username = usernameById.get(Number(uid));
+            if (!username) continue;
+            const accuracyPct = stats.max > 0 ? (stats.score / stats.max) * 100 : 0;
+            const rating = stats.max > 0
+                ? (stats.score / (stats.max + SMOOTH_ROUNDS * 5000)) * 100
+                : 0;
+            entries.push({
+                user_id: uid,
+                username,
+                games_played: stats.games_played,
+                accuracy: Math.round(accuracyPct * 10) / 10,
+                rating: Math.round(rating * 10) / 10,
+            });
+        }
+        entries.sort((a, b) => b.rating - a.rating);
+        return res.json(entries.slice(0, 100));
+    } catch (error) {
+        console.error("[userRoutes] leaderboard failed", error?.message);
+        return res.status(500).json({ error: "Failed to load leaderboard" });
+    }
+});
+
 module.exports = router;
