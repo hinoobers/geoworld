@@ -51,7 +51,6 @@ function buildStreetViewEmbedUrl(streetView) {
     const zoomRaw = Number(streetView.zoom);
     const safeZoom = Number.isFinite(zoomRaw) ? zoomRaw : 0;
     const fov = Math.max(10, Math.min(120, 180 / Math.pow(2, safeZoom)));
-    console.log("[PlayPage] street view zoom", { raw: streetView.zoom, applied: safeZoom, fov });
 
     const params = new URLSearchParams({
         lat: String(lat),

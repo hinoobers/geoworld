@@ -7,22 +7,6 @@ const { verifyToken } = require("./auth");
 const lobbyHandler = require("./lobbyHandler");
 const multiplayerGameHandler = require("./multiplayerGameHandler");
 const db = require("./database");
-const crypto = require("crypto");
-
-function signGoogleMapsUrl(fullUrl, secret) {
-    if (!secret) return fullUrl;
-    const url = new URL(fullUrl);
-    const pathAndQuery = `${url.pathname}${url.search}`;
-    const keyBytes = Buffer.from(secret.replace(/-/g, "+").replace(/_/g, "/"), "base64");
-    const signature = crypto
-        .createHmac("sha1", keyBytes)
-        .update(pathAndQuery)
-        .digest("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_");
-    url.searchParams.append("signature", signature);
-    return url.toString();
-}
 
 const app = express();
 const server = http.createServer(app);
@@ -73,9 +57,7 @@ app.get("/api/streetview", (req, res) => {
         fov: String(Number(fov) || 90),
     });
 
-    const baseUrl = `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`;
-    const finalUrl = signGoogleMapsUrl(baseUrl, process.env.GOOGLE_URL_SIGNING_SECRET);
-    return res.redirect(finalUrl);
+    return res.redirect(`https://www.google.com/maps/embed/v1/streetview?${params.toString()}`);
 });
 
 app.get("/api/stats", async (req, res) => {

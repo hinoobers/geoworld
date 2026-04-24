@@ -91,7 +91,6 @@ function buildStreetViewEmbedUrl(streetView) {
     const pitch = Number.isFinite(Number(streetView.pitch)) ? Number(streetView.pitch) : 0;
     const zoom = Number.isFinite(Number(streetView.zoom)) ? Number(streetView.zoom) : 0;
     const fov = Math.max(10, Math.min(120, 180 / Math.pow(2, zoom)));
-    console.log("[MultiplayerGamePage] street view zoom", { raw: streetView.zoom, applied: zoom, fov });
 
     const params = new URLSearchParams({
         lat: String(lat),
