@@ -14,7 +14,7 @@ const Settings = () => {
     const [password, setPassword] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");
     const [error, setError] = useState("");
-    const { token, setAuth } = useAuth();
+    const { token, logout } = useAuth();
     const navigate = useNavigate();
 
     const handlePasswordChange = async (event) => {
@@ -36,7 +36,7 @@ const Settings = () => {
 
         if(response.ok) {
             setTimeout(() => {
-                setAuth(null);
+                logoout();
                 navigate("/login?message=Password changed successfully. Please log in again.");
             }, 2000);
         }
