@@ -37,8 +37,10 @@ const Settings = () => {
         if(response.ok) {
             setTimeout(() => {
                 navigate("/login?message=Password changed successfully. Please log in again.");
+            }, 1000);
+            setTimeout(() => {
                 logout();
-            }, 2000);
+            }, 1250);
         }
     };
 
