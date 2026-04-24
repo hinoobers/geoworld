@@ -14,15 +14,22 @@ const Settings = () => {
     const [password, setPassword] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");
     const [error, setError] = useState("");
-    const { user, changePassword } = useAuth();
+    const { token } = useAuth();
 
     const handlePasswordChange = async (event) => {
-        const request = await changePassword({ currentPassword, newPassword: password });
-        if (request?.error) {
-            setError(request.error);
+        const response = await fetch(process.env.REACT_APP_API_URL + "/users/change-password", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ current_password: currentPassword, new_password: password }),
+        });
+        const result = await response.json();
+        if (result?.error) {
+            setError(result.error);
         }
-
-        if (request?.success) {
+        if (result?.message) {
             setError("");
         }
     };
