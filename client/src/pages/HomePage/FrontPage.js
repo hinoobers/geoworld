@@ -58,7 +58,7 @@ const FrontPage = () => {
                     : [];
                 const popularMaps = Array.isArray(responseBody)
                     ? responseBody
-                        .filter((map) => Boolean(map.is_public))
+                        .filter((map) => Boolean(map.is_public) || Boolean(map.is_forced_popular))
                         .sort((a, b) => {
                             const forcedDiff = Number(b.is_forced_popular || 0) - Number(a.is_forced_popular || 0);
                             if (forcedDiff !== 0) return forcedDiff;

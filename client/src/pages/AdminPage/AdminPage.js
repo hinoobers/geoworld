@@ -101,6 +101,20 @@ const AdminPage = () => {
         loadAll();
     };
 
+    const handleTogglePublic = async (id, next) => {
+        setActionError("");
+        const res = await authedFetch(`/maps/${id}/public`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_public: next }),
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => null);
+            setActionError(body?.error || "Failed to update map");
+            return;
+        }
+        setMaps((prev) => prev.map((m) => (m.id === id ? { ...m, is_public: next ? 1 : 0 } : m)));
+    };
+
     const handleToggleForcedPopular = async (id, next) => {
         setActionError("");
         const res = await authedFetch(`/maps/${id}/forced-popular`, {
@@ -235,6 +249,7 @@ const AdminPage = () => {
                                             <th>Name</th>
                                             <th>Creator</th>
                                             <th>Daily</th>
+                                            <th>Public</th>
                                             <th>Forced popular</th>
                                             <th>Actions</th>
                                         </tr>
@@ -246,6 +261,18 @@ const AdminPage = () => {
                                                 <td>{m.name}</td>
                                                 <td>{m.creator_username || `#${m.created_by ?? "?"}`}</td>
                                                 <td>{m.is_daily ? "Yes" : ""}</td>
+                                                <td>
+                                                    <label className="admin-switch">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(m.is_public)}
+                                                            onChange={(e) =>
+                                                                handleTogglePublic(m.id, e.target.checked)
+                                                            }
+                                                        />
+                                                        {m.is_public ? "Public" : "Private"}
+                                                    </label>
+                                                </td>
                                                 <td>
                                                     <label className="admin-switch">
                                                         <input

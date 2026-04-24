@@ -13,27 +13,18 @@ function parseSide(raw) {
     }
 }
 
-// Very bad words — racial slurs, hard slurs, CSAM references, etc.
-// Regular swearing (fuck, shit, damn) is allowed; this is only for hate/slur/abuse terms.
 const BANNED_USERNAME_TERMS = [
     "nigger", "nigga", "n1gger", "n1gga",
     "faggot", "fag", "f4ggot",
     "retard", "ret4rd",
     "tranny", "tr4nny",
-    "kike",
-    "chink",
-    "spic",
-    "gook",
     "wetback",
-    "coon",
-    "paki",
-    "kys", "killyourself",
+    "coon", "goon",
+    "paki", "killyourself",
     "hitler", "heilhitler",
     "nazi", "naz1",
-    "loli",
     "pedo", "pedophile",
     "rape", "rapist",
-    "cp",
 ];
 
 function normalizeForModeration(value) {
@@ -102,7 +93,7 @@ router.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Email and password must be strings" });
     }
 
-    const user = await db.query("SELECT id, username, email, password, role FROM users WHERE email = ?", [email]);
+    const user = await db.query("SELECT id, username, email, password, role, is_restricted FROM users WHERE email = ?", [email]);
     if (user.length === 0) {
         // we don't want to reveal whether account exists, so use same error message for both cases
         return res.status(400).json({ error: "Invalid email or password" });
@@ -111,6 +102,12 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user[0].password);
     if (!isMatch) {
         return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    if (Number(user[0].is_restricted) === 1) {
+        return res.status(403).json({
+            error: "Your account is restricted, please contact hinoob@byenoob.com regarding this",
+        });
     }
 
     const token = generateToken(user[0]);

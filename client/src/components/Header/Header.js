@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./Header.css";
 import { useAuth } from "../../context/AuthContext";
 
@@ -17,7 +17,12 @@ function hasGuestIdentity() {
 
 const Header = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { isLoggedIn, user, logout, isAdmin } = useAuth();
+
+    const onLoginPage = location.pathname.startsWith("/login");
+    const guestLabel = onLoginPage ? "Sign up" : "Log in";
+    const guestTarget = onLoginPage ? "/signup" : "/login";
 
     const handleAuthAction = () => {
         if (isLoggedIn) {
@@ -25,8 +30,7 @@ const Header = () => {
             navigate("/");
             return;
         }
-
-        navigate("/login");
+        navigate(guestTarget);
     };
 
     return (
@@ -54,7 +58,7 @@ const Header = () => {
                     </>
                 ) : (
                     <button type="button" onClick={handleAuthAction}>
-                        Log in
+                        {guestLabel}
                     </button>
                 )}
             </div>

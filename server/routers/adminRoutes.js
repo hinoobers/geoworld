@@ -109,6 +109,27 @@ router.get("/maps", async (req, res) => {
     }
 });
 
+router.patch("/maps/:id/public", async (req, res) => {
+    const id = Number(req.params.id);
+    const { is_public } = req.body || {};
+    if (!id || typeof is_public !== "boolean") {
+        return res.status(400).json({ error: "Invalid id or is_public" });
+    }
+    try {
+        const result = await db.query(
+            "UPDATE maps SET is_public = ? WHERE id = ?",
+            [is_public ? 1 : 0, id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Map not found" });
+        }
+        res.json({ ok: true });
+    } catch (error) {
+        console.error("[admin] toggle public failed", error?.message);
+        res.status(500).json({ error: "Failed to update map" });
+    }
+});
+
 router.patch("/maps/:id/forced-popular", async (req, res) => {
     const id = Number(req.params.id);
     const { is_forced_popular } = req.body || {};

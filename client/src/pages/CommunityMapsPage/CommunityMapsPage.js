@@ -46,7 +46,7 @@ const CommunityMapsPage = () => {
 
                 if (!isCancelled) {
                     const publicMaps = Array.isArray(responseBody)
-                        ? responseBody.filter((map) => Boolean(map.is_public))
+                        ? responseBody.filter((map) => Boolean(map.is_public) || Boolean(map.is_forced_popular))
                         : [];
                     setMaps(publicMaps);
                 }
