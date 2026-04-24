@@ -36,7 +36,8 @@ const Settings = () => {
 
         if(response.ok) {
             setTimeout(() => {
-                navigate("/login?message=Password changed successfully. Please log in again.");
+                const message = encodeURIComponent("Password changed successfully. Please log in again.");
+                navigate(`/login?message=${message}`);
             }, 1000);
             setTimeout(() => {
                 //logout();
