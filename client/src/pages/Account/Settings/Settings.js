@@ -14,7 +14,8 @@ const Settings = () => {
     const [password, setPassword] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");
     const [error, setError] = useState("");
-    const { token } = useAuth();
+    const { token, setAuth } = useAuth();
+    const navigate = useNavigate();
 
     const handlePasswordChange = async (event) => {
         const response = await fetch(process.env.REACT_APP_API_URL + "/users/change-password", {
@@ -30,12 +31,19 @@ const Settings = () => {
             setError(result.error);
         }
         if (result?.message) {
-            setError("");
+            setError(result.message);
+        }
+
+        if(response.ok) {
+            setTimeout(() => {
+                setAuth(null);
+                navigate("/login?message=Password changed successfully. Please log in again.");
+            }, 2000);
         }
     };
 
     const handleUsernameChange = async (event) => {    
-
+        setError("Coming soon")
     };
     return (
         <div className="page">

@@ -19,6 +19,13 @@ const Login = () => {
     const [error, setError] = useState("");
 
     const redirectTo = safeRedirectTarget(searchParams.get("redirect"));
+    const message = searchParams.get("message");
+
+    useState(() => {
+        if (message) {
+            setError(message);
+        }
+    }, [message]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
