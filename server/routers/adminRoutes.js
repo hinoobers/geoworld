@@ -26,12 +26,35 @@ router.get("/overview", async (req, res) => {
 router.get("/users", async (req, res) => {
     try {
         const rows = await db.query(
-            "SELECT id, username, email, role FROM users ORDER BY id DESC LIMIT 500"
+            "SELECT id, username, email, role, is_restricted FROM users ORDER BY id DESC LIMIT 500"
         );
         res.json(rows);
     } catch (error) {
         console.error("[admin] list users failed", error?.message);
         res.status(500).json({ error: "Failed to load users" });
+    }
+});
+
+router.patch("/users/:id/restrict", async (req, res) => {
+    const id = Number(req.params.id);
+    const { is_restricted } = req.body || {};
+    if (!id || typeof is_restricted !== "boolean") {
+        return res.status(400).json({ error: "Invalid id or is_restricted" });
+    }
+    if (id === Number(req.user.id)) {
+        return res.status(400).json({ error: "You cannot restrict yourself" });
+    }
+    try {
+        const rows = await db.query("SELECT role FROM users WHERE id = ?", [id]);
+        if (rows.length === 0) return res.status(404).json({ error: "User not found" });
+        if (rows[0].role === "admin") {
+            return res.status(400).json({ error: "Admin accounts cannot be restricted" });
+        }
+        await db.query("UPDATE users SET is_restricted = ? WHERE id = ?", [is_restricted ? 1 : 0, id]);
+        res.json({ ok: true });
+    } catch (error) {
+        console.error("[admin] restrict toggle failed", error?.message);
+        res.status(500).json({ error: "Failed to update user" });
     }
 });
 

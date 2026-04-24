@@ -77,6 +77,20 @@ const AdminPage = () => {
     const mapsForUser = (userId) =>
         maps.filter((m) => Number(m.created_by) === Number(userId));
 
+    const handleToggleRestricted = async (id, next) => {
+        setActionError("");
+        const res = await authedFetch(`/users/${id}/restrict`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_restricted: next }),
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => null);
+            setActionError(body?.error || "Failed to update user");
+            return;
+        }
+        setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, is_restricted: next ? 1 : 0 } : u)));
+    };
+
     const openDeleteUser = (userRow) => {
         setActionError("");
         setDeleteTarget(userRow);
@@ -189,12 +203,14 @@ const AdminPage = () => {
                                             <th>Username</th>
                                             <th>Email</th>
                                             <th>Role</th>
+                                            <th>Restricted</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {users.map((u) => {
                                             const isSelf = Number(u.id) === Number(user?.id);
+                                            const isAdminRow = u.role === "admin";
                                             return (
                                                 <tr key={u.id}>
                                                     <td>{u.id}</td>
@@ -204,6 +220,19 @@ const AdminPage = () => {
                                                         <span className={`admin-role admin-role-${u.role}`}>
                                                             {u.role}
                                                         </span>
+                                                    </td>
+                                                    <td>
+                                                        <label className="admin-switch">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={Boolean(u.is_restricted)}
+                                                                disabled={isAdminRow || isSelf}
+                                                                onChange={(e) =>
+                                                                    handleToggleRestricted(u.id, e.target.checked)
+                                                                }
+                                                            />
+                                                            {u.is_restricted ? "Restricted" : "Active"}
+                                                        </label>
                                                     </td>
                                                     <td className="admin-actions">
                                                         {u.role === "admin" ? (
