@@ -7,6 +7,22 @@ const { verifyToken } = require("./auth");
 const lobbyHandler = require("./lobbyHandler");
 const multiplayerGameHandler = require("./multiplayerGameHandler");
 const db = require("./database");
+const crypto = require("crypto");
+
+function signGoogleMapsUrl(fullUrl, secret) {
+    if (!secret) return fullUrl;
+    const url = new URL(fullUrl);
+    const pathAndQuery = `${url.pathname}${url.search}`;
+    const keyBytes = Buffer.from(secret.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+    const signature = crypto
+        .createHmac("sha1", keyBytes)
+        .update(pathAndQuery)
+        .digest("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_");
+    url.searchParams.append("signature", signature);
+    return url.toString();
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -37,6 +53,30 @@ app.use("/api/maps", require("./routers/mapRoutes"));
 app.use("/api/games", require("./routers/gameRoutes"));
 app.use("/api/lobbies", require("./routers/lobbyRoutes"));
 app.use("/api/admin", require("./routers/adminRoutes"));
+
+app.get("/api/streetview", (req, res) => {
+    const key = process.env.GOOGLE_STREET_VIEW_API_KEY;
+    if (!key) return res.status(500).send("Street View API key not configured");
+
+    const { lat, lng, heading = 0, pitch = 0, fov = 90 } = req.query;
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+        return res.status(400).send("lat and lng are required");
+    }
+
+    const params = new URLSearchParams({
+        key,
+        location: `${latNum},${lngNum}`,
+        heading: String(Number(heading) || 0),
+        pitch: String(Number(pitch) || 0),
+        fov: String(Number(fov) || 90),
+    });
+
+    const baseUrl = `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`;
+    const finalUrl = signGoogleMapsUrl(baseUrl, process.env.GOOGLE_URL_SIGNING_SECRET);
+    return res.redirect(finalUrl);
+});
 
 app.get("/api/stats", async (req, res) => {
     try {

@@ -40,24 +40,27 @@ async function apiRequest(path, token, options = {}) {
 }
 
 function buildStreetViewEmbedUrl(streetView) {
-    if (!streetView) {
-        return null;
-    }
+    if (!streetView) return null;
 
     const lat = Number(streetView.lat);
     const lng = Number(streetView.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        return null;
-    }
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
-    const heading = Number(streetView.rotation);
-    const safeHeading = Number.isFinite(heading) ? heading : 0;
-
+    const heading = Number.isFinite(Number(streetView.rotation)) ? Number(streetView.rotation) : 0;
+    const pitch = Number.isFinite(Number(streetView.pitch)) ? Number(streetView.pitch) : 0;
     const zoomRaw = Number(streetView.zoom);
     const safeZoom = Number.isFinite(zoomRaw) ? zoomRaw : 0;
     const fov = Math.max(10, Math.min(120, 180 / Math.pow(2, safeZoom)));
     console.log("[PlayPage] street view zoom", { raw: streetView.zoom, applied: safeZoom, fov });
-    return `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,${safeHeading},0,0,${fov}&output=svembed`;
+
+    const params = new URLSearchParams({
+        lat: String(lat),
+        lng: String(lng),
+        heading: String(heading),
+        pitch: String(pitch),
+        fov: String(fov),
+    });
+    return `${API_BASE_URL}/streetview?${params.toString()}`;
 }
 
 const BASEMAP_URL =
