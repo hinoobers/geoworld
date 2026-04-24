@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../database");
 const bcrypt = require("bcrypt");
 const { generateToken, middleware } = require("../auth");
+const {sendMail} = require("../mailer");
 
 function parseSide(raw) {
     if (!raw) return null;
@@ -112,6 +113,43 @@ router.post("/login", async (req, res) => {
 
     const token = generateToken(user[0]);
     res.json({ token });
+});
+
+router.post("/reset-password", async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+    }
+
+    if(typeof email !== "string") {
+        return res.status(400).json({ error: "Email must be a string" });
+    }
+
+    if(email.includes("\n") || email.includes("\r") || !email.includes("@")) {
+        return res.status(400).json({ error: "Invalid email" });
+    }
+
+    const user = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (user.length === 0) {
+        // we don't want to reveal whether account exists, so use same response for both cases
+        return res.json({ message: "If an account with that email exists, a password reset link has been sent" });
+    }
+
+    const resetToken = generateToken({ id: user[0].id }, "1h");
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    try {
+        await sendMail({
+            to: email,
+            subject: "GeoWorld Password Reset",
+            text: `You requested a password reset for your GeoWorld account. Click the link below to reset your password:\n\n${resetLink}\n\nIf you didn't request this, you can ignore this email.`,
+        });
+        return res.json({ message: "If an account with that email exists, a password reset link has been sent" });
+    } catch (error) {
+        console.error("Failed to send password reset email", error);
+        // we don't want to reveal email sending failure, so return same response
+        return res.json({ message: "If an account with that email exists, a password reset link has been sent" });
+    }
 });
 
 function findMySideAndOpponent(oneSide, secondSide, userIdNumeric) {

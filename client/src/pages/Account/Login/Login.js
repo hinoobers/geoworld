@@ -33,6 +33,35 @@ const Login = () => {
         }
     };
 
+    const handleReset = async () => {
+        if(email.trim() === "") {
+            setError("Please enter your email to reset your password.");
+            return;
+        }
+
+        // send password reset request to server
+        const apiUrl = (process.env.REACT_APP_API_URL + "/users/reset-password");
+        fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email })
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.message) {
+                setError(data.message);
+            } else {
+                setError("If an account with that email exists, a password reset link has been sent.");
+            }
+        })
+        .catch((error) => {
+            console.error("Failed to send password reset request", error);
+            setError("Failed to send password reset request. Please try again.");
+        });
+    };
+
     return (
         <div className="page">
             <Header />
@@ -62,6 +91,10 @@ const Login = () => {
                         />
 
                         {error ? <p className="form-error">{error}</p> : null}
+
+                        <a onClick={(event) => handleReset()} className="forgot-password-link">
+                            Forgot password?
+                        </a>
 
                         <button type="submit">Log in</button>
                     </form>

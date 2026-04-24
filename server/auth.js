@@ -2,14 +2,14 @@ require("dotenv").config();
 const jsonwebtoken = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
 
-const generateToken = (user) => {
+const generateToken = (user, expiresIn = "7d") => {
     const payload = {
         id: user.id,
         username: user.username,
         email: user.email,
         role: user.role || "user",
     };
-    return jsonwebtoken.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+    return jsonwebtoken.sign(payload, JWT_SECRET, { expiresIn });
 }
 
 const generateGuestToken = (guest) => {
