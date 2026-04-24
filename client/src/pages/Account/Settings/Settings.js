@@ -15,6 +15,21 @@ const Settings = () => {
     const [currentPassword, setCurrentPassword] = useState("");
     const [error, setError] = useState("");
     const { user, changePassword } = useAuth();
+
+    const handlePasswordChange = async (event) => {
+        const request = await changePassword({ currentPassword, newPassword: password });
+        if (request?.error) {
+            setError(request.error);
+        }
+
+        if (request?.success) {
+            setError("");
+        }
+    };
+
+    const handleUsernameChange = async (event) => {    
+
+    };
     return (
         <div className="page">
             <Header />
@@ -24,7 +39,7 @@ const Settings = () => {
                     <h1>Settings</h1>
                     <p>Manage your account settings</p>
 
-                    <form className="settings-form">
+                    <div className="settings-form">
                         <label htmlFor="username">Username</label>
                         <input
                             type="text"
@@ -32,6 +47,10 @@ const Settings = () => {
                             placeholder="Username"
                             disabled={true}
                         />
+
+                        <button type="button" onClick={handleUsernameChange}>
+                            Change Username
+                        </button>
 
                         <div className="password-section">
                             <label htmlFor="current-password">Current password</label>
@@ -52,12 +71,14 @@ const Settings = () => {
                                 onChange={(event) => setPassword(event.target.value)}
                             />
 
-                            <button type="submit">Change Password</button>
+                            <button type="button" onClick={handlePasswordChange}>
+                                Change Password
+                            </button>
                         </div>
 
 
                         {error ? <p className="form-error">{error}</p> : null}
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>

@@ -113,6 +113,27 @@ export function AuthProvider({ children }) {
             return login({ email, password });
         };
 
+        const changePassword = async (currentPassword, newPassword) => {
+            if (!auth?.token) {
+                throw new Error("Not authenticated");
+            }
+
+            const response = await fetch(`${USER_API_BASE_URL}/change-password`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${auth.token}`,
+                },
+                body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to change password");
+            }
+
+            return response.json();
+        };
+
         const logout = () => {
             setAuth(null);
         };
@@ -124,6 +145,7 @@ export function AuthProvider({ children }) {
             isAdmin: auth?.user?.role === "admin",
             login,
             register,
+            changePassword,
             logout,
         };
     }, [auth]);

@@ -115,6 +115,40 @@ router.post("/login", async (req, res) => {
     res.json({ token });
 });
 
+router.post("/change-password", middleware, async (req, res) => {
+    const { current_password, new_password } = req.body;
+
+    if(!current_password || !new_password) {
+        return res.status(400).json({ error: "Current password and new password are required" });
+    }
+
+    if(typeof current_password !== "string" || typeof new_password !== "string") {
+        return res.status(400).json({ error: "Current password and new password must be strings" });
+    }
+
+    if(new_password.length < 6) {
+        return res.status(400).json({ error: "New password must be at least 6 characters long" });
+    }
+
+    const user = await db.query("SELECT id, password FROM users WHERE id = ?", [req.user.id]);
+    if (user.length === 0) {
+        return res.status(400).json({ error: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(current_password, user[0].password);
+    if (!isMatch) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    const result = await db.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, req.user.id]);
+    if (result.affectedRows === 0) {
+        return res.status(500).json({ error: "Failed to change password" });
+    }
+
+    return res.json({ message: "Password changed successfully" });
+});
+
 router.post("/reset-password", async (req, res) => {
     const { email } = req.body;
     if (!email) {
