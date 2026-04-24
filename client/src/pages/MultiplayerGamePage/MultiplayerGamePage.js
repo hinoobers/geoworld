@@ -8,6 +8,7 @@ import markerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
 import markerIconUrl from "leaflet/dist/images/marker-icon.png";
 import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { useAuth } from "../../context/AuthContext";
+import StreetViewPano from "../../components/StreetViewPano/StreetViewPano";
 import "./MultiplayerGamePage.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
@@ -82,24 +83,18 @@ function readGuest() {
     }
 }
 
-function buildStreetViewEmbedUrl(streetView) {
+function resolveStreetView(streetView) {
     if (!streetView) return null;
     const lat = Number(streetView.lat);
     const lng = Number(streetView.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-    const heading = Number.isFinite(Number(streetView.rotation)) ? Number(streetView.rotation) : 0;
-    const pitch = Number.isFinite(Number(streetView.pitch)) ? Number(streetView.pitch) : 0;
-    const zoom = Number.isFinite(Number(streetView.zoom)) ? Number(streetView.zoom) : 0;
-    const fov = Math.max(10, Math.min(120, 180 / Math.pow(2, zoom)));
-
-    const params = new URLSearchParams({
-        lat: String(lat),
-        lng: String(lng),
-        heading: String(heading),
-        pitch: String(pitch),
-        fov: String(fov),
-    });
-    return `${API_BASE_URL}/streetview?${params.toString()}`;
+    return {
+        lat,
+        lng,
+        heading: Number.isFinite(Number(streetView.rotation)) ? Number(streetView.rotation) : 0,
+        pitch: Number.isFinite(Number(streetView.pitch)) ? Number(streetView.pitch) : 0,
+        zoom: Number.isFinite(Number(streetView.zoom)) ? Number(streetView.zoom) : 1,
+    };
 }
 
 function GuessMapEvents({ onPick, disabled }) {
@@ -144,7 +139,7 @@ const MultiplayerGamePage = () => {
     const [iFinishedLocally, setIFinishedLocally] = useState(false);
     const socketRef = useRef(null);
 
-    const streetViewUrl = useMemo(() => buildStreetViewEmbedUrl(state?.street_view), [state?.street_view]);
+    const streetView = useMemo(() => resolveStreetView(state?.street_view), [state?.street_view]);
 
     useEffect(() => {
         if (!activeToken) {
@@ -476,14 +471,14 @@ const MultiplayerGamePage = () => {
 
     return (
         <div className="play-page">
-            {streetViewUrl ? (
-                <iframe
-                    title="Street View"
-                    src={streetViewUrl}
+            {streetView ? (
+                <StreetViewPano
+                    lat={streetView.lat}
+                    lng={streetView.lng}
+                    heading={streetView.heading}
+                    pitch={streetView.pitch}
+                    zoom={streetView.zoom}
                     className="street-view-full"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    allowFullScreen
                 />
             ) : (
                 <div className="street-view-empty">Street view unavailable.</div>

@@ -38,26 +38,10 @@ app.use("/api/games", require("./routers/gameRoutes"));
 app.use("/api/lobbies", require("./routers/lobbyRoutes"));
 app.use("/api/admin", require("./routers/adminRoutes"));
 
-app.get("/api/streetview", (req, res) => {
+app.get("/api/streetview/config", (req, res) => {
     const key = process.env.GOOGLE_STREET_VIEW_API_KEY;
-    if (!key) return res.status(500).send("Street View API key not configured");
-
-    const { lat, lng, heading = 0, pitch = 0, fov = 90 } = req.query;
-    const latNum = Number(lat);
-    const lngNum = Number(lng);
-    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
-        return res.status(400).send("lat and lng are required");
-    }
-
-    const params = new URLSearchParams({
-        key,
-        location: `${latNum},${lngNum}`,
-        heading: String(Number(heading) || 0),
-        pitch: String(Number(pitch) || 0),
-        fov: String(Number(fov) || 90),
-    });
-
-    return res.redirect(`https://www.google.com/maps/embed/v1/streetview?${params.toString()}`);
+    if (!key) return res.status(500).json({ error: "Street View API key not configured" });
+    return res.json({ key });
 });
 
 app.get("/api/stats", async (req, res) => {

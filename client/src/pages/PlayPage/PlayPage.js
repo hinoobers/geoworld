@@ -7,6 +7,7 @@ import markerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
 import markerIconUrl from "leaflet/dist/images/marker-icon.png";
 import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { useAuth } from "../../context/AuthContext";
+import StreetViewPano from "../../components/StreetViewPano/StreetViewPano";
 import "./PlayPage.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
@@ -39,27 +40,18 @@ async function apiRequest(path, token, options = {}) {
     return responseBody;
 }
 
-function buildStreetViewEmbedUrl(streetView) {
+function resolveStreetView(streetView) {
     if (!streetView) return null;
-
     const lat = Number(streetView.lat);
     const lng = Number(streetView.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-    const heading = Number.isFinite(Number(streetView.rotation)) ? Number(streetView.rotation) : 0;
-    const pitch = Number.isFinite(Number(streetView.pitch)) ? Number(streetView.pitch) : 0;
-    const zoomRaw = Number(streetView.zoom);
-    const safeZoom = Number.isFinite(zoomRaw) ? zoomRaw : 0;
-    const fov = Math.max(10, Math.min(120, 180 / Math.pow(2, safeZoom)));
-
-    const params = new URLSearchParams({
-        lat: String(lat),
-        lng: String(lng),
-        heading: String(heading),
-        pitch: String(pitch),
-        fov: String(fov),
-    });
-    return `${API_BASE_URL}/streetview?${params.toString()}`;
+    return {
+        lat,
+        lng,
+        heading: Number.isFinite(Number(streetView.rotation)) ? Number(streetView.rotation) : 0,
+        pitch: Number.isFinite(Number(streetView.pitch)) ? Number(streetView.pitch) : 0,
+        zoom: Number.isFinite(Number(streetView.zoom)) ? Number(streetView.zoom) : 1,
+    };
 }
 
 const BASEMAP_URL =
@@ -149,7 +141,7 @@ const PlayPage = () => {
         return mapIdFromQuery;
     }, [location.search]);
 
-    const streetViewEmbedUrl = useMemo(() => buildStreetViewEmbedUrl(game?.current_street_view), [game]);
+    const streetView = useMemo(() => resolveStreetView(game?.current_street_view), [game]);
     const guessedLocation = useMemo(() => {
         const lat = Number(guessLat);
         const lng = Number(guessLng);
@@ -460,14 +452,14 @@ const PlayPage = () => {
                 </div>
             ) : (
                 <>
-                    {streetViewEmbedUrl ? (
-                        <iframe
-                            title="Street View"
-                            src={streetViewEmbedUrl}
+                    {streetView ? (
+                        <StreetViewPano
+                            lat={streetView.lat}
+                            lng={streetView.lng}
+                            heading={streetView.heading}
+                            pitch={streetView.pitch}
+                            zoom={streetView.zoom}
                             className="street-view-full"
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            allowFullScreen
                         />
                     ) : (
                         <div className="street-view-empty">Start a game to load Street View.</div>
