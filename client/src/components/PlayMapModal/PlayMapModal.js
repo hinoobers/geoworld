@@ -12,17 +12,41 @@ const PlayMapModal = ({ map, onClose }) => {
     const [error, setError] = useState("");
     const [allowMove, setAllowMove] = useState(true);
     const [allowZoom, setAllowZoom] = useState(true);
+    const [allowLook, setAllowLook] = useState(true);
 
     if (!map) return null;
 
-    const startSingleplayer = () => {
-        onClose();
-        const params = new URLSearchParams({
-            map: String(map.map_id),
-            move: allowMove ? "1" : "0",
-            zoom: allowZoom ? "1" : "0",
-        });
-        navigate(`/play?${params.toString()}`);
+    const startSingleplayer = async () => {
+        if (!token) {
+            setError("You must be logged in to play");
+            return;
+        }
+        setError("");
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/games/create-game`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    map_id: map.map_id,
+                    mode: "singleplayer",
+                    allow_move: allowMove,
+                    allow_zoom: allowZoom,
+                    allow_look: allowLook,
+                }),
+            });
+            const body = await response.json().catch(() => null);
+            if (!response.ok) throw new Error(body?.error || "Failed to start game");
+            onClose();
+            navigate(`/play?game=${encodeURIComponent(body.game_id)}`);
+        } catch (nextError) {
+            setError(nextError.message || "Failed to start game");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const createLobby = async () => {
@@ -44,6 +68,7 @@ const PlayMapModal = ({ map, onClose }) => {
                     map_id: map.map_id,
                     allow_move: allowMove,
                     allow_zoom: allowZoom,
+                    allow_look: allowLook,
                 }),
             });
             const body = await response.json().catch(() => null);
@@ -82,6 +107,14 @@ const PlayMapModal = ({ map, onClose }) => {
                             onChange={(e) => setAllowZoom(e.target.checked)}
                         />
                         Allow zoom
+                    </label>
+                    <label className="play-modal-toggle">
+                        <input
+                            type="checkbox"
+                            checked={allowLook}
+                            onChange={(e) => setAllowLook(e.target.checked)}
+                        />
+                        Allow looking around
                     </label>
                 </div>
 

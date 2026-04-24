@@ -27,7 +27,7 @@ router.post("/guest", (req, res) => {
 });
 
 router.post("/", middleware, async (req, res) => {
-    const { map_id, allow_move, allow_zoom, round_time_seconds } = req.body;
+    const { map_id, allow_move, allow_zoom, allow_look, round_time_seconds } = req.body;
     const mapId = Number(map_id);
     if (!Number.isInteger(mapId) || mapId <= 0) {
         return res.status(400).json({ error: "map_id must be a positive integer" });
@@ -50,6 +50,7 @@ router.post("/", middleware, async (req, res) => {
             host: identity,
             allowMove: allow_move !== false,
             allowZoom: allow_zoom !== false,
+            allowLook: allow_look !== false,
             roundTimeSeconds: round_time_seconds,
         });
 
@@ -153,7 +154,7 @@ router.post("/:code/map", userOrGuestMiddleware, async (req, res) => {
 
 router.post("/:code/settings", userOrGuestMiddleware, async (req, res) => {
     const identity = lobbyHandler.identityFromToken(req.user);
-    const { map_id, round_time_seconds, allow_move, allow_zoom } = req.body || {};
+    const { map_id, round_time_seconds, allow_move, allow_zoom, allow_look } = req.body || {};
 
     const lobby = lobbyHandler.getLobby(req.params.code);
     if (!lobby) {
@@ -189,6 +190,7 @@ router.post("/:code/settings", userOrGuestMiddleware, async (req, res) => {
 
         if (typeof allow_move === "boolean") lobby.allow_move = allow_move;
         if (typeof allow_zoom === "boolean") lobby.allow_zoom = allow_zoom;
+        if (typeof allow_look === "boolean") lobby.allow_look = allow_look;
 
         broadcastLobby(req, lobby);
         return res.json({ ok: true, lobby: lobbyHandler.serializeLobby(lobby) });

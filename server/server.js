@@ -38,9 +38,28 @@ app.use("/api/games", require("./routers/gameRoutes"));
 app.use("/api/lobbies", require("./routers/lobbyRoutes"));
 app.use("/api/admin", require("./routers/adminRoutes"));
 
-app.get("/api/streetview/config", (req, res) => {
+const { userOrGuestMiddleware } = require("./auth");
+
+const STREETVIEW_DAILY_LIMIT_PER_USER = 300;
+const streetviewQuota = new Map(); // key: identity -> { day, count }
+
+app.get("/api/streetview/config", userOrGuestMiddleware, (req, res) => {
     const key = process.env.GOOGLE_STREET_VIEW_API_KEY;
     if (!key) return res.status(500).json({ error: "Street View API key not configured" });
+
+    const identity = req.user?.is_guest ? `guest:${req.user.id}` : `user:${req.user.id}`;
+    const today = new Date().toISOString().slice(0, 10);
+    const entry = streetviewQuota.get(identity) || { day: today, count: 0 };
+    if (entry.day !== today) {
+        entry.day = today;
+        entry.count = 0;
+    }
+    if (entry.count >= STREETVIEW_DAILY_LIMIT_PER_USER) {
+        return res.status(429).json({ error: "Daily street view quota reached. Try again tomorrow." });
+    }
+    entry.count += 1;
+    streetviewQuota.set(identity, entry);
+
     return res.json({ key });
 });
 

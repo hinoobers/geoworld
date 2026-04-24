@@ -480,6 +480,7 @@ const MultiplayerGamePage = () => {
                     zoom={streetView.zoom}
                     allowMove={state?.allow_move !== false}
                     allowZoom={state?.allow_zoom !== false}
+                    allowLook={state?.allow_look !== false}
                     className="street-view-full"
                 />
             ) : (

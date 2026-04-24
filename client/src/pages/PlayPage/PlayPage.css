@@ -223,6 +223,7 @@
     background: rgba(8, 18, 30, 0.92);
     border: 1px solid rgba(141, 180, 216, 0.35);
     border-radius: 16px;
+    text-align: center;
     padding: 20px;
     color: #f5f9ff;
 }

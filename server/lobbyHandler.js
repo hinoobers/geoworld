@@ -44,7 +44,7 @@ function normalizeRoundTimeSeconds(value) {
     return ALLOWED_ROUND_TIME_SECONDS.has(n) ? n : 0;
 }
 
-function createLobby({ mapId, mapName, host, allowMove = true, allowZoom = true, roundTimeSeconds = 0 }) {
+function createLobby({ mapId, mapName, host, allowMove = true, allowZoom = true, allowLook = true, roundTimeSeconds = 0 }) {
     const code = generateLobbyCode();
     const hostParticipant = buildParticipant(host, "A");
 
@@ -55,6 +55,7 @@ function createLobby({ mapId, mapName, host, allowMove = true, allowZoom = true,
         round_time_seconds: normalizeRoundTimeSeconds(roundTimeSeconds),
         allow_move: Boolean(allowMove),
         allow_zoom: Boolean(allowZoom),
+        allow_look: Boolean(allowLook),
         host_identity_id: host.identity_id,
         created_at: Date.now(),
         status: "waiting",
@@ -202,6 +203,7 @@ function serializeLobby(lobby) {
         round_time_seconds: Number(lobby.round_time_seconds) || 0,
         allow_move: lobby.allow_move !== false,
         allow_zoom: lobby.allow_zoom !== false,
+        allow_look: lobby.allow_look !== false,
         host_identity_id: lobby.host_identity_id,
         status: lobby.status,
         game_id: lobby.game_id,

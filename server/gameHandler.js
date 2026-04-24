@@ -103,6 +103,7 @@ function buildGameInfo(game, playerId) {
         total_score: game.scores[playerId] ?? 0,
         allow_move: game.allow_move !== false,
         allow_zoom: game.allow_zoom !== false,
+        allow_look: game.allow_look !== false,
     };
 }
 
@@ -300,6 +301,7 @@ async function createGame(mapId, mode, ownerId, requestedRounds, options = {}) {
         last_activity_at: Date.now(),
         allow_move: options.allowMove !== false,
         allow_zoom: options.allowZoom !== false,
+        allow_look: options.allowLook !== false,
     };
 
     game.db_game_id = await persistCreatedGame(game, ownerId);

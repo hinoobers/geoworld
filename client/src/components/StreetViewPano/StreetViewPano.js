@@ -22,15 +22,43 @@ function loadGoogleMapsScript(apiKey) {
     return mapsLoaderPromise;
 }
 
+function getAuthToken() {
+    try {
+        const stored = localStorage.getItem("geoworld-auth");
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed?.token) return parsed.token;
+        }
+        const guest = localStorage.getItem("geoworld-guest");
+        if (guest) {
+            const parsed = JSON.parse(guest);
+            if (parsed?.token) return parsed.token;
+        }
+    } catch {
+        // ignore
+    }
+    return null;
+}
+
 let cachedKeyPromise = null;
 function fetchApiKey() {
     if (cachedKeyPromise) return cachedKeyPromise;
-    cachedKeyPromise = fetch(`${API_BASE_URL}/streetview/config`)
-        .then((res) => {
-            if (!res.ok) throw new Error("Failed to load street view config");
+    const token = getAuthToken();
+    cachedKeyPromise = fetch(`${API_BASE_URL}/streetview/config`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+        .then(async (res) => {
+            if (!res.ok) {
+                const body = await res.json().catch(() => null);
+                throw new Error(body?.error || "Failed to load street view config");
+            }
             return res.json();
         })
-        .then((body) => body.key);
+        .then((body) => body.key)
+        .catch((err) => {
+            cachedKeyPromise = null;
+            throw err;
+        });
     return cachedKeyPromise;
 }
 
@@ -58,8 +86,10 @@ const StreetViewPano = ({
     zoom = 1,
     allowMove = true,
     allowZoom = true,
+    allowLook = true,
     className,
 }) => {
+    const wrapperRef = useRef(null);
     const containerRef = useRef(null);
     const panoRef = useRef(null);
     const [error, setError] = useState("");
@@ -107,7 +137,38 @@ const StreetViewPano = ({
         return <div className={className}>{error}</div>;
     }
 
-    return <div ref={containerRef} className={className} />;
+    return (
+        <div ref={wrapperRef} className={className} style={{ position: "relative" }}>
+            <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+            {!allowLook ? (
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        zIndex: 2,
+                        cursor: "default",
+                        background: "transparent",
+                    }}
+                    onPointerDownCapture={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }}
+                    onTouchStartCapture={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }}
+                    onMouseDownCapture={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }}
+                    onWheelCapture={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }}
+                />
+            ) : null}
+        </div>
+    );
 };
 
 export default StreetViewPano;

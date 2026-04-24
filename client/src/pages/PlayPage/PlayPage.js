@@ -141,12 +141,10 @@ const PlayPage = () => {
         return mapIdFromQuery;
     }, [location.search]);
 
-    const requestedOptions = useMemo(() => {
+    const requestedGameId = useMemo(() => {
         const query = new URLSearchParams(location.search);
-        return {
-            allowMove: query.get("move") !== "0",
-            allowZoom: query.get("zoom") !== "0",
-        };
+        const raw = query.get("game");
+        return raw ? String(raw) : null;
     }, [location.search]);
 
     const streetView = useMemo(() => resolveStreetView(game?.current_street_view), [game]);
@@ -220,36 +218,15 @@ const PlayPage = () => {
     }, [isLoggedIn, navigate, requestedMapId, token]);
 
     useEffect(() => {
-        if (requestedMapId === null || autoStartAttempted.current || game || loading || maps.length === 0) {
-            return;
-        }
-
-        const mapExists = maps.some((map) => Number(map.map_id) === requestedMapId);
-        if (!mapExists) {
-            autoStartAttempted.current = true;
-            return;
-        }
-
+        if (!requestedGameId || autoStartAttempted.current || !token) return;
         autoStartAttempted.current = true;
-        setSelectedMapId(String(requestedMapId));
 
-        const startRequestedMap = async () => {
+        const loadExistingGame = async () => {
             setError("");
             setLatestRoundResult(null);
-
             try {
                 setLoading(true);
-                const created = await apiRequest("/games/create-game", token, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        map_id: requestedMapId,
-                        mode: "singleplayer",
-                        allow_move: requestedOptions.allowMove,
-                        allow_zoom: requestedOptions.allowZoom,
-                    }),
-                });
-
-                const gameInfo = await apiRequest(`/games/gameinfo?game_id=${created.game_id}`, token);
+                const gameInfo = await apiRequest(`/games/gameinfo?game_id=${requestedGameId}`, token);
                 setGame(gameInfo);
                 setPendingGame(null);
                 setShowResultScreen(false);
@@ -262,8 +239,8 @@ const PlayPage = () => {
             }
         };
 
-        startRequestedMap();
-    }, [game, loading, maps, requestedMapId, token]);
+        loadExistingGame();
+    }, [requestedGameId, token]);
 
     useEffect(() => {
         if (!game?.game_id || !token) {
@@ -471,6 +448,7 @@ const PlayPage = () => {
                             zoom={streetView.zoom}
                             allowMove={game?.allow_move !== false}
                             allowZoom={game?.allow_zoom !== false}
+                            allowLook={game?.allow_look !== false}
                             className="street-view-full"
                         />
                     ) : (

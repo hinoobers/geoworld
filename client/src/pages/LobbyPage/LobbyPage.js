@@ -59,6 +59,7 @@ const LobbyPage = () => {
     const [selectedRoundTime, setSelectedRoundTime] = useState(0);
     const [selectedAllowMove, setSelectedAllowMove] = useState(true);
     const [selectedAllowZoom, setSelectedAllowZoom] = useState(true);
+    const [selectedAllowLook, setSelectedAllowLook] = useState(true);
     const socketRef = useRef(null);
 
     const ROUND_TIME_OPTIONS = [
@@ -254,6 +255,7 @@ const LobbyPage = () => {
         setSelectedRoundTime(Number(lobby?.round_time_seconds) || 0);
         setSelectedAllowMove(lobby?.allow_move !== false);
         setSelectedAllowZoom(lobby?.allow_zoom !== false);
+        setSelectedAllowLook(lobby?.allow_look !== false);
         setMapSearch("");
         setMapSort("plays");
         setMapPage(1);
@@ -289,6 +291,7 @@ const LobbyPage = () => {
                     round_time_seconds: Number(selectedRoundTime) || 0,
                     allow_move: selectedAllowMove,
                     allow_zoom: selectedAllowZoom,
+                    allow_look: selectedAllowLook,
                 }),
             });
 
@@ -557,6 +560,15 @@ const LobbyPage = () => {
                                     disabled={updatingMap}
                                 />
                                 Allow zoom
+                            </label>
+                            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedAllowLook}
+                                    onChange={(e) => setSelectedAllowLook(e.target.checked)}
+                                    disabled={updatingMap}
+                                />
+                                Allow looking around
                             </label>
                         </section>
 
