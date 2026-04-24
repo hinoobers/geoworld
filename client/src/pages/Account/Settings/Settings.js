@@ -20,19 +20,17 @@ const Settings = () => {
             <Header />
 
             <div className="content">
-                <div className="sett-page">
+                <div className="settings-page">
                     <h1>Settings</h1>
                     <p>Manage your account settings</p>
 
-                    <form className="settings-form" onSubmit={handleSubmit}>
+                    <form className="settings-form">
                         <label htmlFor="username">Username</label>
                         <input
                             type="text"
                             id="username"
                             placeholder="Username"
-                            value={username}
                             disabled={true}
-                            onChange={(event) => setUsername(event.target.value)}
                         />
 
                         <div className="password-section">

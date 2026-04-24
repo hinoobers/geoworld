@@ -17,6 +17,7 @@ import AdminPage from './pages/AdminPage/AdminPage';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
 import TermsOfService from './pages/Legal/TermsOfService';
 import Settings from './pages/Account/Settings/Settings';
+import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 
 function App() {
   return (
