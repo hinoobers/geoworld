@@ -299,6 +299,10 @@ const FrontPage = () => {
                 <EditMapModal
                     map={editingMap}
                     onClose={() => setEditingMap(null)}
+                    onDeleted={(mapId) => {
+                        setMyMaps((list) => list.filter((m) => m.map_id !== mapId));
+                        setAllMaps((list) => list.filter((m) => m.map_id !== mapId));
+                    }}
                     onSaved={(updated) => {
                         setMyMaps((list) =>
                             list.map((m) => (m.map_id === updated.map_id ? { ...m, ...updated } : m))

@@ -19,7 +19,7 @@ function emptyPosition() {
     return { id: null, lat: "", lng: "", yaw: "0", pitch: "0", zoom: "1" };
 }
 
-const EditMapModal = ({ map, onClose, onSaved }) => {
+const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
     const { token } = useAuth();
     const [name, setName] = useState(map?.name || "");
     const [description, setDescription] = useState(map?.description || "");
@@ -27,6 +27,8 @@ const EditMapModal = ({ map, onClose, onSaved }) => {
     const [positions, setPositions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -203,11 +205,61 @@ const EditMapModal = ({ map, onClose, onSaved }) => {
                         {error ? <p className="edit-map-error">{error}</p> : null}
 
                         <div className="edit-map-actions">
-                            <button type="button" onClick={onClose} disabled={saving}>Cancel</button>
-                            <button type="submit" disabled={saving}>
+                            <button
+                                type="button"
+                                className="edit-map-delete"
+                                onClick={() => setConfirmDelete(true)}
+                                disabled={saving || deleting}
+                            >
+                                Delete map
+                            </button>
+                            <div style={{ flex: 1 }} />
+                            <button type="button" onClick={onClose} disabled={saving || deleting}>Cancel</button>
+                            <button type="submit" disabled={saving || deleting}>
                                 {saving ? "Saving…" : "Save changes"}
                             </button>
                         </div>
+
+                        {confirmDelete ? (
+                            <div className="edit-map-confirm">
+                                <p>Delete <strong>{name}</strong>? This cannot be undone.</p>
+                                <div className="edit-map-confirm-actions">
+                                    <button
+                                        type="button"
+                                        onClick={() => setConfirmDelete(false)}
+                                        disabled={deleting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="edit-map-delete"
+                                        disabled={deleting}
+                                        onClick={async () => {
+                                            setDeleting(true);
+                                            setError("");
+                                            try {
+                                                const res = await fetch(`${API_BASE_URL}/maps/${map.map_id}`, {
+                                                    method: "DELETE",
+                                                    headers: { Authorization: `Bearer ${token}` },
+                                                });
+                                                const body = await res.json().catch(() => null);
+                                                if (!res.ok) throw new Error(body?.error || "Failed to delete");
+                                                onDeleted?.(map.map_id);
+                                                onClose?.();
+                                            } catch (err) {
+                                                setError(err.message || "Failed to delete");
+                                                setConfirmDelete(false);
+                                            } finally {
+                                                setDeleting(false);
+                                            }
+                                        }}
+                                    >
+                                        {deleting ? "Deleting…" : "Yes, delete"}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
                     </form>
                 )}
             </div>

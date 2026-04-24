@@ -35,8 +35,8 @@
 
 .games-controls {
     margin-top: 14px;
-    margin-left: 20px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
 }
@@ -135,10 +135,6 @@
 @media (max-width: 860px) {
     .games-list {
         grid-template-columns: 1fr;
-    }
-
-    .games-controls {
-        margin-left: 0;
     }
 
     .games-content {

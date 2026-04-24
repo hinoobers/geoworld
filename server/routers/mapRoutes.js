@@ -324,4 +324,28 @@ router.get("/:id", middleware, async (req, res) => {
     }
 });
 
+router.delete("/:id", middleware, async (req, res) => {
+    const mapId = Number(req.params.id);
+    if (!Number.isInteger(mapId) || mapId <= 0) {
+        return res.status(400).json({ error: "Invalid map id" });
+    }
+
+    try {
+        const mapRows = await query("SELECT created_by FROM maps WHERE id = ?", [mapId]);
+        if (mapRows.length === 0) {
+            return res.status(404).json({ error: "Map not found" });
+        }
+        if (Number(mapRows[0].created_by) !== Number(req.user.id)) {
+            return res.status(403).json({ error: "Only the creator can delete this map" });
+        }
+
+        await query("DELETE FROM map_positions WHERE map_id = ?", [mapId]);
+        await query("DELETE FROM maps WHERE id = ?", [mapId]);
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("[mapRoutes] delete failed", error?.message);
+        return res.status(500).json({ error: error?.message || "Failed to delete map" });
+    }
+});
+
 module.exports = router;

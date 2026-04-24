@@ -198,8 +198,38 @@
 .edit-map-actions {
     display: flex;
     gap: 10px;
-    justify-content: flex-end;
+    align-items: center;
     margin-top: 6px;
+}
+
+.edit-map-delete {
+    background: rgba(255, 154, 162, 0.18) !important;
+    color: #ff9aa2 !important;
+    border: 1px solid rgba(255, 154, 162, 0.5) !important;
+}
+
+.edit-map-delete:hover:not(:disabled) {
+    background: rgba(255, 154, 162, 0.3) !important;
+}
+
+.edit-map-confirm {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 154, 162, 0.4);
+    background: rgba(255, 154, 162, 0.08);
+}
+
+.edit-map-confirm p {
+    margin: 0 0 10px;
+    color: #ffd6dc;
+    font-size: 0.95rem;
+}
+
+.edit-map-confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
 }
 
 .edit-map-actions button {

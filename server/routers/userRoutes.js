@@ -173,7 +173,8 @@ router.get("/me/games", middleware, async (req, res) => {
         const multiNeedle = `%"user_ids":%`;
 
         const rows = await db.query(
-            `SELECT g.game_id, g.mode, g.one_side, g.second_side, g.map_id, g.created_at, m.name AS map_name
+            `SELECT g.game_id, g.mode, g.one_side, g.second_side, g.map_id, g.created_at,
+                    m.name AS map_name, m.is_public AS map_is_public, m.created_by AS map_created_by
              FROM games g
              LEFT JOIN maps m ON m.id = g.map_id
              WHERE g.one_side LIKE ? OR g.second_side LIKE ?
@@ -213,19 +214,38 @@ router.get("/me/games", middleware, async (req, res) => {
 
         const resolveOpponentName = (opponentSide) => {
             if (!opponentSide) return null;
+
+            if (Array.isArray(opponentSide.members) && opponentSide.members.length > 0) {
+                const names = opponentSide.members.map((member) => {
+                    if (!member) return null;
+                    if (member.is_guest === true) {
+                        return member.display_name || "Guest";
+                    }
+                    if (member.user_id != null) {
+                        return usernameById.get(Number(member.user_id)) || member.display_name || null;
+                    }
+                    return member.display_name || null;
+                }).filter(Boolean);
+                if (names.length > 0) return names.join(", ");
+                return null;
+            }
+
             if (Array.isArray(opponentSide.user_ids) && opponentSide.user_ids.length > 0) {
                 const names = opponentSide.user_ids
                     .map((uid) => usernameById.get(Number(uid)))
                     .filter(Boolean);
                 if (names.length > 0) return names.join(", ");
             }
+
             if (opponentSide.side) {
-                const name = usernameById.get(Number(opponentSide.side));
-                if (name) return name;
+                const username = usernameById.get(Number(opponentSide.side));
+                if (username) return username;
             }
+
             if (opponentSide.display_name && opponentSide.display_name !== opponentSide.side_label) {
                 return opponentSide.display_name;
             }
+
             return null;
         };
 
@@ -278,7 +298,13 @@ router.get("/me/games", middleware, async (req, res) => {
                     score,
                     total_rounds: totalRounds,
                     map_id: row.map_id,
-                    map_name: row.map_name || `Map #${row.map_id}`,
+                    map_name: (() => {
+                        if (!row.map_name) return "Deleted map";
+                        const isPublic = Number(row.map_is_public) === 1;
+                        const isMine = Number(row.map_created_by) === userIdNumeric;
+                        if (isPublic || isMine) return row.map_name;
+                        return "Private map";
+                    })(),
                     opponent_name: opponentName,
                     opponent_score: opponentSide ? (Number(opponentSide.score) || 0) : null,
                     created_at: row.created_at || null,

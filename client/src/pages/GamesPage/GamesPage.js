@@ -15,6 +15,7 @@ const GamesPage = () => {
     const [error, setError] = useState("");
     const [modeFilter, setModeFilter] = useState("all");
     const [resultFilter, setResultFilter] = useState("all");
+    const [sortOrder, setSortOrder] = useState("newest");
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -68,12 +69,16 @@ const GamesPage = () => {
     }, [token]);
 
     const visibleGames = useMemo(() => {
-        return games.filter((game) => {
+        const filtered = games.filter((game) => {
             const modeMatches = modeFilter === "all" || game.mode === modeFilter;
             const resultMatches = resultFilter === "all" || game.result === resultFilter;
             return modeMatches && resultMatches;
         });
-    }, [games, modeFilter, resultFilter]);
+        const ts = (g) => (g.created_at ? new Date(g.created_at).getTime() : 0);
+        return filtered.slice().sort((a, b) =>
+            sortOrder === "oldest" ? ts(a) - ts(b) : ts(b) - ts(a)
+        );
+    }, [games, modeFilter, resultFilter, sortOrder]);
 
     const renderResultLabel = (game) => {
         if (!game.result) return "-";
@@ -114,6 +119,16 @@ const GamesPage = () => {
                         <option value="all">All</option>
                         <option value="win">Win</option>
                         <option value="loss">Loss</option>
+                    </select>
+
+                    <label htmlFor="games-sort-filter">Sort</label>
+                    <select
+                        id="games-sort-filter"
+                        value={sortOrder}
+                        onChange={(event) => setSortOrder(event.target.value)}
+                    >
+                        <option value="newest">Newest first</option>
+                        <option value="oldest">Oldest first</option>
                     </select>
                 </section>
 
