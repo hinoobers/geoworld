@@ -101,6 +101,8 @@ function buildGameInfo(game, playerId) {
         total_rounds: game.total_rounds,
         current_street_view: currentRound ? buildRoundStreetView(currentRound) : null,
         total_score: game.scores[playerId] ?? 0,
+        allow_move: game.allow_move !== false,
+        allow_zoom: game.allow_zoom !== false,
     };
 }
 
@@ -257,7 +259,7 @@ async function loadMapPositions(mapId) {
     return rows.map(sanitizePosition).filter(Boolean);
 }
 
-async function createGame(mapId, mode, ownerId, requestedRounds) {
+async function createGame(mapId, mode, ownerId, requestedRounds, options = {}) {
     const positions = await loadMapPositions(mapId);
     if (positions.length === 0) {
         throw new Error("This map has no playable positions");
@@ -296,6 +298,8 @@ async function createGame(mapId, mode, ownerId, requestedRounds) {
         db_game_id: null,
         second_side_user_id: null,
         last_activity_at: Date.now(),
+        allow_move: options.allowMove !== false,
+        allow_zoom: options.allowZoom !== false,
     };
 
     game.db_game_id = await persistCreatedGame(game, ownerId);

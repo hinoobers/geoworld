@@ -10,12 +10,19 @@ const PlayMapModal = ({ map, onClose }) => {
     const { token } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [allowMove, setAllowMove] = useState(true);
+    const [allowZoom, setAllowZoom] = useState(true);
 
     if (!map) return null;
 
     const startSingleplayer = () => {
         onClose();
-        navigate(`/play?map=${encodeURIComponent(String(map.map_id))}`);
+        const params = new URLSearchParams({
+            map: String(map.map_id),
+            move: allowMove ? "1" : "0",
+            zoom: allowZoom ? "1" : "0",
+        });
+        navigate(`/play?${params.toString()}`);
     };
 
     const createLobby = async () => {
@@ -33,7 +40,11 @@ const PlayMapModal = ({ map, onClose }) => {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ map_id: map.map_id }),
+                body: JSON.stringify({
+                    map_id: map.map_id,
+                    allow_move: allowMove,
+                    allow_zoom: allowZoom,
+                }),
             });
             const body = await response.json().catch(() => null);
             if (!response.ok) {
@@ -54,6 +65,25 @@ const PlayMapModal = ({ map, onClose }) => {
                 <button type="button" className="play-modal-close" onClick={onClose} aria-label="Close">×</button>
                 <h2>{map.name || "Play map"}</h2>
                 {map.description ? <p className="play-modal-description">{map.description}</p> : null}
+
+                <div className="play-modal-settings">
+                    <label className="play-modal-toggle">
+                        <input
+                            type="checkbox"
+                            checked={allowMove}
+                            onChange={(e) => setAllowMove(e.target.checked)}
+                        />
+                        Allow moving
+                    </label>
+                    <label className="play-modal-toggle">
+                        <input
+                            type="checkbox"
+                            checked={allowZoom}
+                            onChange={(e) => setAllowZoom(e.target.checked)}
+                        />
+                        Allow zoom
+                    </label>
+                </div>
 
                 <div className="play-modal-actions">
                     <button type="button" className="play-modal-primary" onClick={startSingleplayer} disabled={loading}>

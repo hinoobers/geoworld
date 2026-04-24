@@ -187,7 +187,7 @@ router.get("/gameinfo", middleware, (req, res) => {
 });
 
 router.post("/create-game", middleware, async (req, res) => {
-    const { map_id, mode, round_count } = req.body;
+    const { map_id, mode, round_count, allow_move, allow_zoom } = req.body;
     // mode can be "singleplayer" or "multiplayer", in multiplayer, a lobby is created instead, start-game is not needed, if multiplayer, then start-game needs to be called
 
     if(!map_id || !mode) {
@@ -209,7 +209,11 @@ router.post("/create-game", middleware, async (req, res) => {
             parsedMapId,
             mode,
             req.user.id,
-            Number.isFinite(parsedRoundCount) ? parsedRoundCount : null
+            Number.isFinite(parsedRoundCount) ? parsedRoundCount : null,
+            {
+                allowMove: allow_move !== false,
+                allowZoom: allow_zoom !== false,
+            }
         );
 
         return res.status(201).json({
@@ -231,6 +235,8 @@ router.post("/create-game", middleware, async (req, res) => {
                         }
                         : null
                     : null,
+            allow_move: game.allow_move !== false,
+            allow_zoom: game.allow_zoom !== false,
         });
     } catch (error) {
         if (error.message === "This map has no playable positions") {

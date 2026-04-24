@@ -478,6 +478,8 @@ const MultiplayerGamePage = () => {
                     heading={streetView.heading}
                     pitch={streetView.pitch}
                     zoom={streetView.zoom}
+                    allowMove={state?.allow_move !== false}
+                    allowZoom={state?.allow_zoom !== false}
                     className="street-view-full"
                 />
             ) : (

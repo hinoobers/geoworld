@@ -141,6 +141,14 @@ const PlayPage = () => {
         return mapIdFromQuery;
     }, [location.search]);
 
+    const requestedOptions = useMemo(() => {
+        const query = new URLSearchParams(location.search);
+        return {
+            allowMove: query.get("move") !== "0",
+            allowZoom: query.get("zoom") !== "0",
+        };
+    }, [location.search]);
+
     const streetView = useMemo(() => resolveStreetView(game?.current_street_view), [game]);
     const guessedLocation = useMemo(() => {
         const lat = Number(guessLat);
@@ -236,6 +244,8 @@ const PlayPage = () => {
                     body: JSON.stringify({
                         map_id: requestedMapId,
                         mode: "singleplayer",
+                        allow_move: requestedOptions.allowMove,
+                        allow_zoom: requestedOptions.allowZoom,
                     }),
                 });
 
@@ -459,6 +469,8 @@ const PlayPage = () => {
                             heading={streetView.heading}
                             pitch={streetView.pitch}
                             zoom={streetView.zoom}
+                            allowMove={game?.allow_move !== false}
+                            allowZoom={game?.allow_zoom !== false}
                             className="street-view-full"
                         />
                     ) : (

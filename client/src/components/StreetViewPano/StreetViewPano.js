@@ -34,21 +34,32 @@ function fetchApiKey() {
     return cachedKeyPromise;
 }
 
-const DEFAULT_OPTIONS = {
-    addressControl: false,
-    fullscreenControl: false,
-    linksControl: false,
-    panControl: false,
-    zoomControl: false,
-    motionTracking: false,
-    motionTrackingControl: false,
-    showRoadLabels: false,
-    clickToGo: false,
-    scrollwheel: false,
-    disableDefaultUI: true,
-};
+function buildOptions({ allowMove, allowZoom }) {
+    return {
+        addressControl: false,
+        fullscreenControl: false,
+        motionTracking: false,
+        motionTrackingControl: false,
+        showRoadLabels: false,
+        panControl: false,
+        disableDefaultUI: true,
+        linksControl: Boolean(allowMove),
+        clickToGo: Boolean(allowMove),
+        zoomControl: Boolean(allowZoom),
+        scrollwheel: Boolean(allowZoom),
+    };
+}
 
-const StreetViewPano = ({ lat, lng, heading = 0, pitch = 0, zoom = 1, className }) => {
+const StreetViewPano = ({
+    lat,
+    lng,
+    heading = 0,
+    pitch = 0,
+    zoom = 1,
+    allowMove = true,
+    allowZoom = true,
+    className,
+}) => {
     const containerRef = useRef(null);
     const panoRef = useRef(null);
     const [error, setError] = useState("");
@@ -67,17 +78,20 @@ const StreetViewPano = ({ lat, lng, heading = 0, pitch = 0, zoom = 1, className 
                 const pov = { heading: Number(heading) || 0, pitch: Number(pitch) || 0 };
                 const zoomNum = Number(zoom) || 1;
 
+                const options = buildOptions({ allowMove, allowZoom });
+
                 if (!panoRef.current) {
                     panoRef.current = new window.google.maps.StreetViewPanorama(containerRef.current, {
                         position,
                         pov,
                         zoom: zoomNum,
-                        ...DEFAULT_OPTIONS,
+                        ...options,
                     });
                 } else {
                     panoRef.current.setPosition(position);
                     panoRef.current.setPov(pov);
                     panoRef.current.setZoom(zoomNum);
+                    panoRef.current.setOptions(options);
                 }
             } catch (err) {
                 if (!cancelled) setError(err.message || "Street view failed to load");
@@ -87,7 +101,7 @@ const StreetViewPano = ({ lat, lng, heading = 0, pitch = 0, zoom = 1, className 
         return () => {
             cancelled = true;
         };
-    }, [lat, lng, heading, pitch, zoom]);
+    }, [lat, lng, heading, pitch, zoom, allowMove, allowZoom]);
 
     if (error) {
         return <div className={className}>{error}</div>;

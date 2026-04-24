@@ -57,6 +57,8 @@ const LobbyPage = () => {
     const [mapPage, setMapPage] = useState(1);
     const [updatingMap, setUpdatingMap] = useState(false);
     const [selectedRoundTime, setSelectedRoundTime] = useState(0);
+    const [selectedAllowMove, setSelectedAllowMove] = useState(true);
+    const [selectedAllowZoom, setSelectedAllowZoom] = useState(true);
     const socketRef = useRef(null);
 
     const ROUND_TIME_OPTIONS = [
@@ -250,6 +252,8 @@ const LobbyPage = () => {
         if (!amHost) return;
         setSelectedMapId(String(lobby?.map_id || ""));
         setSelectedRoundTime(Number(lobby?.round_time_seconds) || 0);
+        setSelectedAllowMove(lobby?.allow_move !== false);
+        setSelectedAllowZoom(lobby?.allow_zoom !== false);
         setMapSearch("");
         setMapSort("plays");
         setMapPage(1);
@@ -283,6 +287,8 @@ const LobbyPage = () => {
                 body: JSON.stringify({
                     map_id: nextMapId,
                     round_time_seconds: Number(selectedRoundTime) || 0,
+                    allow_move: selectedAllowMove,
+                    allow_zoom: selectedAllowZoom,
                 }),
             });
 
@@ -518,7 +524,7 @@ const LobbyPage = () => {
                         <h2>Edit Lobby Settings</h2>
                         <p>Pick a map and choose the round timer before starting the game.</p>
 
-                        <section className="lobby-modal-controls" style={{ marginBottom: 12 }}>
+                        <section className="lobby-modal-controls" style={{ marginBottom: 12, flexWrap: "wrap", gap: 12 }}>
                             <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <span>Time between rounds</span>
                                 <select
@@ -533,6 +539,24 @@ const LobbyPage = () => {
                                         </option>
                                     ))}
                                 </select>
+                            </label>
+                            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedAllowMove}
+                                    onChange={(e) => setSelectedAllowMove(e.target.checked)}
+                                    disabled={updatingMap}
+                                />
+                                Allow moving
+                            </label>
+                            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedAllowZoom}
+                                    onChange={(e) => setSelectedAllowZoom(e.target.checked)}
+                                    disabled={updatingMap}
+                                />
+                                Allow zoom
                             </label>
                         </section>
 
