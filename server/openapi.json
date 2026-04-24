@@ -1,0 +1,571 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GeoWorld API",
+    "version": "1.0.0",
+    "description": "HTTP API powering the GeoWorld game. Socket.IO events are documented at the bottom of this page."
+  },
+  "servers": [
+    { "url": "/api", "description": "Current host" }
+  ],
+  "tags": [
+    { "name": "Users" },
+    { "name": "Maps" },
+    { "name": "Games" },
+    { "name": "Lobbies" },
+    { "name": "Admin" },
+    { "name": "Street View" },
+    { "name": "Misc" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT from POST /users/login or POST /lobbies/guest."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } }
+      },
+      "Position": {
+        "type": "object",
+        "properties": {
+          "map_position_id": { "type": "integer", "description": "Omit when inserting a new position" },
+          "lat": { "type": "number" },
+          "lng": { "type": "number" },
+          "yaw": { "type": "number" },
+          "pitch": { "type": "number" },
+          "zoom": { "type": "number", "default": 1 }
+        },
+        "required": ["lat", "lng"]
+      },
+      "Map": {
+        "type": "object",
+        "properties": {
+          "map_id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "user_id": { "type": "integer" },
+          "created_by": { "type": "integer" },
+          "is_public": { "type": "boolean" },
+          "positions_count": { "type": "integer" },
+          "plays_count": { "type": "integer" }
+        }
+      },
+      "LobbyParticipant": {
+        "type": "object",
+        "properties": {
+          "identity_id": { "type": "string", "example": "user:1" },
+          "user_id": { "type": "integer", "nullable": true },
+          "display_name": { "type": "string" },
+          "is_guest": { "type": "boolean" },
+          "side": { "type": "string", "enum": ["A", "B"] },
+          "is_connected": { "type": "boolean" },
+          "is_host": { "type": "boolean" }
+        }
+      },
+      "Lobby": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "map_id": { "type": "integer" },
+          "map_name": { "type": "string", "nullable": true },
+          "round_time_seconds": { "type": "integer", "enum": [0, 30, 60, 180, 300] },
+          "allow_move": { "type": "boolean" },
+          "allow_zoom": { "type": "boolean" },
+          "allow_look": { "type": "boolean" },
+          "host_identity_id": { "type": "string" },
+          "status": { "type": "string", "enum": ["waiting", "in_game"] },
+          "game_id": { "type": "string", "nullable": true },
+          "participants": { "type": "array", "items": { "$ref": "#/components/schemas/LobbyParticipant" } }
+        }
+      },
+      "StreetView": {
+        "type": "object",
+        "properties": {
+          "position_id": { "type": "integer", "nullable": true },
+          "lat": { "type": "number" },
+          "lng": { "type": "number" },
+          "rotation": { "type": "number" },
+          "pitch": { "type": "number" },
+          "zoom": { "type": "number" },
+          "panorama_id": { "type": "string", "nullable": true }
+        }
+      },
+      "GameSummary": {
+        "type": "object",
+        "properties": {
+          "game_id": { "type": "integer" },
+          "mode": { "type": "string", "enum": ["singleplayer", "multiplayer"] },
+          "status": { "type": "string", "enum": ["active", "completed", "abandoned", "unknown"] },
+          "result": { "type": "string", "enum": ["win", "loss", "draw"], "nullable": true },
+          "score": { "type": "integer" },
+          "total_rounds": { "type": "integer" },
+          "map_id": { "type": "integer" },
+          "map_name": { "type": "string", "description": "Real name, or 'Private map' for non-accessible maps, or 'Deleted map'." },
+          "opponent_name": { "type": "string", "nullable": true },
+          "opponent_score": { "type": "integer", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "security": [],
+  "paths": {
+    "/users/register": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Create an account",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["email", "username", "password"],
+            "properties": {
+              "email": { "type": "string" },
+              "username": { "type": "string" },
+              "password": { "type": "string", "minLength": 6 }
+            }
+          } } }
+        },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "integer" } } } } } },
+          "400": { "description": "Validation or duplicate email", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/users/login": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Exchange credentials for a JWT",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["email", "password"],
+            "properties": {
+              "email": { "type": "string" },
+              "password": { "type": "string" }
+            }
+          } } }
+        },
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "token": { "type": "string" } } } } } },
+          "400": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/users/me/stats": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Lifetime stats for the caller",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "win_streak": { "type": "integer" },
+              "games_played_this_week": { "type": "integer" },
+              "accuracy": { "type": "integer" },
+              "completed_games": { "type": "integer" }
+            }
+          } } } }
+        }
+      }
+    },
+    "/users/me/games": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Caller's recent games (newest first, up to 200)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/GameSummary" } } } } }
+        }
+      }
+    },
+
+    "/maps/create-map": {
+      "post": {
+        "tags": ["Maps"],
+        "summary": "Create a map owned by the caller",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["map_name", "map_positions"],
+            "properties": {
+              "map_name": { "type": "string" },
+              "description": { "type": "string", "nullable": true },
+              "map_positions": { "type": "array", "items": { "$ref": "#/components/schemas/Position" }, "minItems": 1 }
+            }
+          } } }
+        },
+        "responses": { "201": { "description": "Created" }, "400": { "description": "Validation" } }
+      }
+    },
+    "/maps/list": {
+      "get": {
+        "tags": ["Maps"],
+        "summary": "All non-deleted maps",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Map" } } } } } }
+      }
+    },
+    "/maps/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+      "get": {
+        "tags": ["Maps"],
+        "summary": "Fetch a map with its positions",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } }
+      },
+      "put": {
+        "tags": ["Maps"],
+        "summary": "Update a map (creator only, diff-based for positions)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string", "nullable": true },
+              "is_public": { "type": "boolean" },
+              "map_positions": { "type": "array", "items": { "$ref": "#/components/schemas/Position" } }
+            }
+          } } }
+        },
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": { "ok": { "type": "boolean" }, "map_id": { "type": "integer" }, "kept_locked_positions": { "type": "integer" } }
+          } } } },
+          "403": { "description": "Not creator" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Maps"],
+        "summary": "Delete a map (creator only)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" }, "403": { "description": "Not creator" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/maps/{id}/visibility": {
+      "patch": {
+        "tags": ["Maps"],
+        "summary": "Toggle is_public on a map (creator only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "is_public": { "type": "boolean" } }, "required": ["is_public"] } } }
+        },
+        "responses": { "200": { "description": "OK" }, "403": { "description": "Not creator" } }
+      }
+    },
+    "/maps/pos/{id}": {
+      "get": {
+        "tags": ["Maps"],
+        "summary": "Raw map_positions rows for a map",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+
+    "/games/create-game": {
+      "post": {
+        "tags": ["Games"],
+        "summary": "Start a singleplayer game or prepare a multiplayer shell",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["map_id", "mode"],
+            "properties": {
+              "map_id": { "type": "integer" },
+              "mode": { "type": "string", "enum": ["singleplayer", "multiplayer"] },
+              "round_count": { "type": "integer" },
+              "allow_move": { "type": "boolean", "default": true },
+              "allow_zoom": { "type": "boolean", "default": true },
+              "allow_look": { "type": "boolean", "default": true }
+            }
+          } } }
+        },
+        "responses": { "201": { "description": "Created" }, "400": { "description": "Validation" } }
+      }
+    },
+    "/games/start-game": {
+      "post": {
+        "tags": ["Games"],
+        "summary": "Transition a lobby game to active",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "game_id": { "type": "string" } }, "required": ["game_id"] } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/games/guess": {
+      "post": {
+        "tags": ["Games"],
+        "summary": "Submit a round guess",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["game_id", "guess"],
+            "properties": {
+              "game_id": { "type": "string" },
+              "guess": { "type": "object", "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } } }
+            }
+          } } }
+        },
+        "responses": { "200": { "description": "Round result" } }
+      }
+    },
+    "/games/heartbeat": {
+      "post": {
+        "tags": ["Games"],
+        "summary": "Ping to keep an in-memory game alive",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "game_id": { "type": "string" } }, "required": ["game_id"] } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/games/gameinfo": {
+      "get": {
+        "tags": ["Games"],
+        "summary": "Load current state of a game the caller is in",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "game_id", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/games/daily-challenge": {
+      "get": {
+        "tags": ["Games"],
+        "summary": "Today's daily map + whether the caller played it",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/games/daily-leaderboard": {
+      "get": {
+        "tags": ["Games"],
+        "summary": "Top scores on today's daily (must have played)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } }],
+        "responses": { "200": { "description": "OK" }, "403": { "description": "Caller hasn't played today's daily" } }
+      }
+    },
+
+    "/lobbies/guest": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Mint a throwaway guest identity + token",
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/lobbies": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Create a lobby (registered users only)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["map_id"],
+            "properties": {
+              "map_id": { "type": "integer" },
+              "allow_move": { "type": "boolean", "default": true },
+              "allow_zoom": { "type": "boolean", "default": true },
+              "allow_look": { "type": "boolean", "default": true },
+              "round_time_seconds": { "type": "integer", "enum": [0, 30, 60, 180, 300], "default": 0 }
+            }
+          } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/lobbies/{code}": {
+      "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": {
+        "tags": ["Lobbies"],
+        "summary": "Fetch a lobby",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/lobbies/{code}/join": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Join a lobby (user or guest)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Lobby not found" } }
+      }
+    },
+    "/lobbies/{code}/side": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Move a participant between sides (host only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["target_identity_id", "side"],
+            "properties": { "target_identity_id": { "type": "string" }, "side": { "type": "string", "enum": ["A", "B"] } }
+          } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/lobbies/{code}/settings": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Update lobby settings (host only, while waiting)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "map_id": { "type": "integer" },
+              "round_time_seconds": { "type": "integer", "enum": [0, 30, 60, 180, 300] },
+              "allow_move": { "type": "boolean" },
+              "allow_zoom": { "type": "boolean" },
+              "allow_look": { "type": "boolean" }
+            }
+          } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/lobbies/{code}/leave": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Leave a lobby (host triggers disband)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/lobbies/{code}/kick": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Kick a participant (host only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "target_identity_id": { "type": "string" } }, "required": ["target_identity_id"] } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/lobbies/{code}/start": {
+      "post": {
+        "tags": ["Lobbies"],
+        "summary": "Start the multiplayer game (host only)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "OK" }, "400": { "description": "Both sides need at least one player" } }
+      }
+    },
+
+    "/admin/overview": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Counts of users, admins, games, maps",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" }, "403": { "description": "Admin required" } }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List up to 500 users",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/users/{id}/role": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Promote or demote a user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "role": { "type": "string", "enum": ["admin", "user"] } }, "required": ["role"] } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/users/{id}": {
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Delete a user; choose what happens to their maps",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": { "maps_action": { "type": "string", "enum": ["delete", "transfer"], "default": "delete" } }
+          } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/maps": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List up to 500 maps with creator usernames",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/maps/{id}": {
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Hard-delete any map",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+
+    "/streetview/config": {
+      "get": {
+        "tags": ["Street View"],
+        "summary": "Hand out the Google Maps JS API key (daily rate limit: 300/identity)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "key": { "type": "string" } } } } } },
+          "429": { "description": "Daily quota reached" }
+        }
+      }
+    },
+
+    "/stats": {
+      "get": {
+        "tags": ["Misc"],
+        "summary": "Public landing-page stats",
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "users": { "type": "integer" },
+              "games": { "type": "integer" },
+              "maps": { "type": "integer" }
+            }
+          } } } }
+        }
+      }
+    }
+  }
+}

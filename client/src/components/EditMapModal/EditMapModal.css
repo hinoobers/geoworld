@@ -232,6 +232,27 @@
     justify-content: flex-end;
 }
 
+.edit-map-confirm-actions button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f6ff;
+    border: 1px solid rgba(201, 194, 255, 0.35);
+}
+
+.edit-map-confirm-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.edit-map-confirm-actions .edit-map-delete {
+    border-radius: 10px !important;
+}
+
 .edit-map-actions button {
     border: none;
     border-radius: 10px;
