@@ -4,12 +4,6 @@ import Header from "../../../components/Header/Header";
 import { useAuth } from "../../../context/AuthContext";
 import "./Settings.css";
 
-function safeRedirectTarget(raw) {
-    if (!raw || typeof raw !== "string") return "/home";
-    if (!raw.startsWith("/") || raw.startsWith("//")) return "/home";
-    return raw;
-}
-
 const Settings = () => {
     const [password, setPassword] = useState("");
     const [currentPassword, setCurrentPassword] = useState("");

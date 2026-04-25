@@ -39,8 +39,7 @@ const LeaderboardPage = () => {
                 <section className="lb-hero">
                     <h1>Global Leaderboard</h1>
                     <p>
-                        Ranked by adjusted accuracy — your score-per-round is smoothed with 20 dummy empty
-                        rounds so a handful of perfect games can't outrank someone with a long proven history.
+                        Play and guess accurately to level up your rating and climb the ranks! Your leaderboard rating is based on your accuracy and the number of games you've played. The more you play and the better you guess, the higher your rating will be. Compete with players around the world and see how you stack up on the global leaderboard!
                     </p>
                 </section>
 
