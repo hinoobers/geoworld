@@ -224,7 +224,7 @@ const FrontPage = () => {
                     <article className="stat-card">
                         <span>Win Streak</span>
                         <h2>{statsLoading ? "-" : stats?.win_streak ?? 0}</h2>
-                        <p>games in a row</p>
+                        <p>multiplayer wins in a row</p>
                     </article>
                     <article className="stat-card">
                         <span>Games Played</span>

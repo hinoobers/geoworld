@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 const { Server } = require("socket.io");
 const { verifyToken } = require("./auth");
 const lobbyHandler = require("./lobbyHandler");
@@ -9,6 +11,9 @@ const multiplayerGameHandler = require("./multiplayerGameHandler");
 const db = require("./database");
 const swaggerUi = require("swagger-ui-express");
 const openApiSpec = require("./openapi.json");
+
+const PFP_DIR = path.join(__dirname, "uploads", "pfps");
+fs.mkdirSync(PFP_DIR, { recursive: true });
 
 const app = express();
 const server = http.createServer(app);
@@ -33,6 +38,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use("/pfps", express.static(PFP_DIR, {
+    fallthrough: false,
+    maxAge: "7d",
+}));
 
 app.use("/api/users", require("./routers/userRoutes"));
 app.use("/api/maps", require("./routers/mapRoutes"));

@@ -154,6 +154,45 @@
     color: #ece6ff;
 }
 
+.settings-pfp-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 4px;
+}
+
+.settings-pfp-preview {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(143, 80, 255, 0.18);
+    border: 1px solid rgba(164, 140, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.settings-pfp-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.settings-pfp-placeholder {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #f5f6ff;
+}
+
+.settings-pfp-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
 @media (max-width: 860px) {
     .settings-grid {
         grid-template-columns: 1fr;

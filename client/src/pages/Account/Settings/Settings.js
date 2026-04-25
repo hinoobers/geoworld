@@ -1,12 +1,23 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header/Header";
 import { useAuth } from "../../../context/AuthContext";
 import "./Settings.css";
 
+const ACCEPTED_PFP_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_PFP_BYTES = 5 * 1024 * 1024;
+
+function getPfpBaseUrl() {
+    const explicit = process.env.REACT_APP_SOCKET_URL;
+    if (explicit) return explicit.replace(/\/$/, "");
+    const api = process.env.REACT_APP_API_URL || "";
+    return api.replace(/\/api\/?$/, "");
+}
+
 const Settings = () => {
     const { token, user, login, logout } = useAuth();
     const navigate = useNavigate();
+    const pfpInputRef = useRef(null);
 
     const [username, setUsername] = useState(user?.username || "");
     const [usernameMessage, setUsernameMessage] = useState(null);
@@ -16,6 +27,104 @@ const Settings = () => {
     const [newPassword, setNewPassword] = useState("");
     const [passwordMessage, setPasswordMessage] = useState(null);
     const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+
+    const [profilePfp, setProfilePfp] = useState(null);
+    const [pfpMessage, setPfpMessage] = useState(null);
+    const [pfpSubmitting, setPfpSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (!token) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(process.env.REACT_APP_API_URL + "/users/me", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const body = await res.json().catch(() => ({}));
+                if (!cancelled && res.ok) {
+                    setProfilePfp(body?.profile_pfp || null);
+                }
+            } catch {
+                /* ignore */
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [token]);
+
+    const pfpUrl = profilePfp ? `${getPfpBaseUrl()}/pfps/${profilePfp}` : null;
+
+    const handlePfpFile = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+
+        setPfpMessage(null);
+
+        if (!ACCEPTED_PFP_TYPES.includes(file.type)) {
+            setPfpMessage({ kind: "error", text: "Use a JPEG, PNG, WebP, or GIF image." });
+            return;
+        }
+        if (file.size > MAX_PFP_BYTES) {
+            setPfpMessage({ kind: "error", text: "Image must be under 5 MB." });
+            return;
+        }
+
+        setPfpSubmitting(true);
+        let response;
+        try {
+            response = await fetch(process.env.REACT_APP_API_URL + "/users/me/profile-picture", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": file.type,
+                },
+                body: file,
+            });
+        } catch (err) {
+            setPfpSubmitting(false);
+            setPfpMessage({ kind: "error", text: "Upload failed. Please try again." });
+            return;
+        }
+
+        const result = await response.json().catch(() => ({}));
+        setPfpSubmitting(false);
+
+        if (!response.ok) {
+            setPfpMessage({ kind: "error", text: result?.error || "Upload failed." });
+            return;
+        }
+
+        setProfilePfp(result?.profile_pfp || null);
+        setPfpMessage({ kind: "success", text: "Profile picture updated." });
+    };
+
+    const handlePfpRemove = async () => {
+        if (pfpSubmitting || !profilePfp) return;
+        setPfpMessage(null);
+        setPfpSubmitting(true);
+        let response;
+        try {
+            response = await fetch(process.env.REACT_APP_API_URL + "/users/me/profile-picture", {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+        } catch (err) {
+            setPfpSubmitting(false);
+            setPfpMessage({ kind: "error", text: "Failed to remove. Please try again." });
+            return;
+        }
+
+        const result = await response.json().catch(() => ({}));
+        setPfpSubmitting(false);
+
+        if (!response.ok) {
+            setPfpMessage({ kind: "error", text: result?.error || "Failed to remove." });
+            return;
+        }
+
+        setProfilePfp(null);
+        setPfpMessage({ kind: "success", text: "Profile picture removed." });
+    };
 
     const handleUsernameChange = async (event) => {
         event.preventDefault();
@@ -140,6 +249,61 @@ const Settings = () => {
                 </div>
 
                 <div className="settings-grid">
+                    <div className="settings-card">
+                        <div className="settings-card-head">
+                            <h3>Profile picture</h3>
+                        </div>
+                        <p className="settings-card-hint">
+                            JPEG, PNG, WebP, or GIF. Up to 5 MB.
+                        </p>
+
+                        <div className="settings-pfp-row">
+                            <div className="settings-pfp-preview">
+                                {pfpUrl ? (
+                                    <img src={pfpUrl} alt="Profile" />
+                                ) : (
+                                    <span className="settings-pfp-placeholder">
+                                        {(user?.username?.[0] || "?").toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="settings-pfp-actions">
+                                <input
+                                    ref={pfpInputRef}
+                                    type="file"
+                                    accept={ACCEPTED_PFP_TYPES.join(",")}
+                                    style={{ display: "none" }}
+                                    onChange={handlePfpFile}
+                                />
+                                <button
+                                    type="button"
+                                    className="settings-primary"
+                                    onClick={() => pfpInputRef.current?.click()}
+                                    disabled={pfpSubmitting}
+                                >
+                                    {pfpSubmitting ? "Uploading..." : profilePfp ? "Change picture" : "Upload picture"}
+                                </button>
+                                {profilePfp ? (
+                                    <button
+                                        type="button"
+                                        className="settings-ghost"
+                                        onClick={handlePfpRemove}
+                                        disabled={pfpSubmitting}
+                                    >
+                                        Remove
+                                    </button>
+                                ) : null}
+                            </div>
+                        </div>
+
+                        {pfpMessage ? (
+                            <p className={`settings-message settings-message-${pfpMessage.kind}`}>
+                                {pfpMessage.text}
+                            </p>
+                        ) : null}
+                    </div>
+
                     <form className="settings-card" onSubmit={handleUsernameChange}>
                         <div className="settings-card-head">
                             <h3>Username</h3>

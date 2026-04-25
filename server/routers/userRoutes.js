@@ -1,9 +1,50 @@
 const express = require("express");
 const router = express.Router();
+const path = require("path");
+const fs = require("fs/promises");
+const { randomUUID } = require("crypto");
 const db = require("../database");
 const bcrypt = require("bcrypt");
 const { generateToken, middleware, verifyToken } = require("../auth");
 const {sendMail} = require("../mailer");
+
+const PFP_DIR = path.join(__dirname, "..", "uploads", "pfps");
+const MAX_PFP_BYTES = 5 * 1024 * 1024;
+
+const ALLOWED_PFP_MIMES = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+]);
+
+function detectImageType(buffer) {
+    if (!Buffer.isBuffer(buffer) || buffer.length < 12) return null;
+    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+        return { mime: "image/jpeg", ext: "jpg" };
+    }
+    if (
+        buffer[0] === 0x89 && buffer[1] === 0x50 &&
+        buffer[2] === 0x4e && buffer[3] === 0x47
+    ) {
+        return { mime: "image/png", ext: "png" };
+    }
+    if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
+        return { mime: "image/gif", ext: "gif" };
+    }
+    if (
+        buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+        buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50
+    ) {
+        return { mime: "image/webp", ext: "webp" };
+    }
+    return null;
+}
+
+const pfpUploadParser = express.raw({
+    type: (req) => ALLOWED_PFP_MIMES.has(String(req.headers["content-type"] || "").toLowerCase()),
+    limit: MAX_PFP_BYTES,
+});
 
 function parseSide(raw) {
     if (!raw) return null;
@@ -152,6 +193,108 @@ router.post("/change-password", middleware, async (req, res) => {
     }
 
     return res.json({ message: "Password changed successfully" });
+});
+
+router.get("/me", middleware, async (req, res) => {
+    const rows = await db.query(
+        "SELECT id, username, email, role, profile_pfp FROM users WHERE id = ?",
+        [req.user.id]
+    );
+    if (rows.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({
+        id: rows[0].id,
+        username: rows[0].username,
+        email: rows[0].email,
+        role: rows[0].role,
+        profile_pfp: rows[0].profile_pfp || null,
+    });
+});
+
+router.post("/me/profile-picture", middleware, pfpUploadParser, async (req, res) => {
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+        return res.status(400).json({
+            error: "Image required. Send raw bytes with Content-Type set to image/jpeg, image/png, image/webp, or image/gif.",
+        });
+    }
+    if (req.body.length > MAX_PFP_BYTES) {
+        return res.status(413).json({ error: "Image must be smaller than 5 MB" });
+    }
+
+    const detected = detectImageType(req.body);
+    if (!detected) {
+        return res.status(400).json({ error: "Unsupported or invalid image. Allowed: JPEG, PNG, WebP, GIF." });
+    }
+
+    const claimedMime = String(req.headers["content-type"] || "").toLowerCase();
+    if (claimedMime !== detected.mime) {
+        return res.status(400).json({ error: "Image content does not match the declared Content-Type." });
+    }
+
+    const filename = `user_${req.user.id}_${randomUUID()}.${detected.ext}`;
+    const filePath = path.join(PFP_DIR, filename);
+
+    try {
+        await fs.mkdir(PFP_DIR, { recursive: true });
+        await fs.writeFile(filePath, req.body);
+    } catch (err) {
+        console.error("[users] failed to write profile picture", err?.message);
+        return res.status(500).json({ error: "Failed to save profile picture" });
+    }
+
+    let previousFilename = null;
+    try {
+        const userRows = await db.query("SELECT profile_pfp FROM users WHERE id = ?", [req.user.id]);
+        previousFilename = userRows[0]?.profile_pfp || null;
+    } catch {
+        /* ignore — DB lookup for cleanup is best-effort */
+    }
+
+    const result = await db.query(
+        "UPDATE users SET profile_pfp = ? WHERE id = ?",
+        [filename, req.user.id]
+    );
+    if (result.affectedRows === 0) {
+        await fs.unlink(filePath).catch(() => {});
+        return res.status(500).json({ error: "Failed to update user record" });
+    }
+
+    if (previousFilename && typeof previousFilename === "string") {
+        const safePrevious = path.basename(previousFilename);
+        await fs.unlink(path.join(PFP_DIR, safePrevious)).catch(() => {});
+    }
+
+    return res.json({
+        message: "Profile picture updated",
+        profile_pfp: filename,
+        url: `/pfps/${filename}`,
+    });
+});
+
+router.delete("/me/profile-picture", middleware, async (req, res) => {
+    let previousFilename = null;
+    try {
+        const userRows = await db.query("SELECT profile_pfp FROM users WHERE id = ?", [req.user.id]);
+        previousFilename = userRows[0]?.profile_pfp || null;
+    } catch {
+        return res.status(500).json({ error: "Failed to load user record" });
+    }
+
+    const result = await db.query(
+        "UPDATE users SET profile_pfp = NULL WHERE id = ?",
+        [req.user.id]
+    );
+    if (result.affectedRows === 0) {
+        return res.status(500).json({ error: "Failed to update user record" });
+    }
+
+    if (previousFilename && typeof previousFilename === "string") {
+        const safePrevious = path.basename(previousFilename);
+        await fs.unlink(path.join(PFP_DIR, safePrevious)).catch(() => {});
+    }
+
+    return res.json({ message: "Profile picture removed" });
 });
 
 router.post("/change-username", middleware, async (req, res) => {
@@ -339,14 +482,8 @@ router.get("/me/stats", middleware, async (req, res) => {
                 totalMaxScore += totalRounds * 5000;
             }
 
-            if (streakOpen) {
-                let isWin;
-                if (row.mode === "multiplayer" && opponentSide) {
-                    isWin = score > (Number(opponentSide.score) || 0);
-                } else {
-                    isWin = totalRounds > 0 && score >= totalRounds * 2500;
-                }
-
+            if (streakOpen && row.mode === "multiplayer" && opponentSide) {
+                const isWin = score > (Number(opponentSide.score) || 0);
                 if (isWin) {
                     winStreak += 1;
                 } else {
