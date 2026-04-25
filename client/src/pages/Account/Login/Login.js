@@ -22,6 +22,12 @@ const Login = () => {
     const message = searchParams.get("message");
 
     useEffect(() => {
+        const flash = sessionStorage.getItem("geoworld-auth-flash");
+        if (flash) {
+            setError(flash);
+            sessionStorage.removeItem("geoworld-auth-flash");
+            return;
+        }
         if (message) {
             setError(message);
         }

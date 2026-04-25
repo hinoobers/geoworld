@@ -117,6 +117,7 @@ router.post("/login", async (req, res) => {
 
 router.post("/change-password", middleware, async (req, res) => {
     const { current_password, new_password } = req.body;
+    
 
     if(!current_password || !new_password) {
         return res.status(400).json({ error: "Current password and new password are required" });
@@ -147,6 +148,56 @@ router.post("/change-password", middleware, async (req, res) => {
     }
 
     return res.json({ message: "Password changed successfully" });
+});
+
+router.post("/change-username", middleware, async (req, res) => {
+    const { username } = req.body;
+
+    if (!username || typeof username !== "string") {
+        return res.status(400).json({ error: "Username is required" });
+    }
+
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length < 2 || trimmedUsername.length > 24) {
+        return res.status(400).json({ error: "Username must be between 2 and 24 characters" });
+    }
+    if (!/^[A-Za-z0-9_.\-]+$/.test(trimmedUsername)) {
+        return res.status(400).json({ error: "Username can only use letters, numbers, and _.-" });
+    }
+    if (containsBannedTerm(trimmedUsername)) {
+        return res.status(400).json({ error: "Please choose a different username" });
+    }
+
+    if (trimmedUsername === req.user.username) {
+        return res.status(400).json({ error: "That is already your username" });
+    }
+
+    const existing = await db.query(
+        "SELECT id FROM users WHERE username = ? AND id != ?",
+        [trimmedUsername, req.user.id]
+    );
+    if (existing.length > 0) {
+        return res.status(400).json({ error: "Username is already taken" });
+    }
+
+    const result = await db.query(
+        "UPDATE users SET username = ? WHERE id = ?",
+        [trimmedUsername, req.user.id]
+    );
+    if (result.affectedRows === 0) {
+        return res.status(500).json({ error: "Failed to change username" });
+    }
+
+    const refreshed = await db.query(
+        "SELECT id, username, email, role FROM users WHERE id = ?",
+        [req.user.id]
+    );
+    if (refreshed.length === 0) {
+        return res.status(500).json({ error: "Failed to load updated user" });
+    }
+
+    const token = generateToken(refreshed[0]);
+    return res.json({ message: "Username changed successfully", token });
 });
 
 router.post("/reset-password", async (req, res) => {
