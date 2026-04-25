@@ -77,13 +77,33 @@
 }
 
 .position-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(201, 194, 255, 0.15);
+}
+
+.position-row-fields {
     display: grid;
-    grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.6fr auto auto auto;
+    grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.45fr auto auto auto;
     gap: 8px;
 }
 
 .position-row input {
     min-width: 0;
+}
+
+.position-note {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.position-note::placeholder {
+    color: rgba(218, 216, 245, 0.5);
+    font-style: italic;
 }
 
 .position-row button {
@@ -95,11 +115,34 @@
 }
 
 .inspect-position {
-    background: linear-gradient(90deg, #286fb9 0%, #46a0ff 100%);
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #f5f6ff;
+    border: 1px solid rgba(201, 194, 255, 0.3) !important;
+    width: 40px;
+    padding: 0 !important;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inspect-position:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.16) !important;
 }
 
 .remove-position {
-    background: linear-gradient(90deg, #a63f52 0%, #d75f7f 100%);
+    background: rgba(255, 154, 162, 0.18) !important;
+    color: #ff9aa2 !important;
+    border: 1px solid rgba(255, 154, 162, 0.4) !important;
+    width: 40px;
+    padding: 0 !important;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.remove-position:hover:not(:disabled) {
+    background: rgba(255, 154, 162, 0.32) !important;
 }
 
 .create-map-actions {
@@ -121,8 +164,8 @@
 }
 
 @media (max-width: 760px) {
-    .position-row {
-        grid-template-columns: 1fr;
+    .position-row-fields {
+        grid-template-columns: 1fr 1fr;
     }
 
     .create-map-actions {

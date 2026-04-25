@@ -13,6 +13,7 @@ function emptyPosition() {
         yaw: "0",
         pitch: "0",
         zoom: "1",
+        note: "",
     };
 }
 
@@ -322,6 +323,7 @@ const CreateMapPage = () => {
                 yaw: Number(position.yaw || 0),
                 pitch: Number(position.pitch || 0),
                 zoom: Number(position.zoom || 1),
+                note: typeof position.note === "string" && position.note.trim() ? position.note.trim() : null,
             }))
             .filter((position) => Number.isFinite(position.lat) && Number.isFinite(position.lng));
 
@@ -405,69 +407,82 @@ const CreateMapPage = () => {
                             <article className="position-row" key={`position-${index}`}>
                                 <input
                                     type="text"
-                                    inputMode="decimal"
-                                    placeholder="Latitude"
-                                    value={position.lat}
-                                    onChange={(event) => updatePosition(index, "lat", event.target.value)}
+                                    className="position-note"
+                                    placeholder="Note (only you can see)"
+                                    maxLength={500}
+                                    value={position.note}
+                                    onChange={(event) => updatePosition(index, "note", event.target.value)}
                                 />
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    placeholder="Longitude"
-                                    value={position.lng}
-                                    onChange={(event) => updatePosition(index, "lng", event.target.value)}
-                                />
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    placeholder="Yaw"
-                                    value={position.yaw}
-                                    onChange={(event) => updatePosition(index, "yaw", event.target.value)}
-                                />
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    placeholder="Pitch"
-                                    value={position.pitch}
-                                    onChange={(event) => updatePosition(index, "pitch", event.target.value)}
-                                />
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    placeholder="Zoom"
-                                    value={position.zoom}
-                                    onChange={(event) => updatePosition(index, "zoom", event.target.value)}
-                                />
-                                <button
-                                    type="button"
-                                    className="paste-position"
-                                    onClick={() => {
-                                        handlePastePosition(index);
-                                    }}
-                                >
-                                    Paste
-                                </button>
-                                <button
-                                    type="button"
-                                    className="inspect-position"
-                                    onClick={() => {
-                                        const inspectLink = buildInspectLink(position);
-                                        if (inspectLink) {
-                                            window.open(inspectLink, "_blank", "noopener,noreferrer");
-                                        }
-                                    }}
-                                    disabled={!buildInspectLink(position)}
-                                >
-                                    Inspect
-                                </button>
-                                <button
-                                    type="button"
-                                    className="remove-position"
-                                    onClick={() => removePosition(index)}
-                                    disabled={positions.length <= 1}
-                                >
-                                    Remove
-                                </button>
+                                <div className="position-row-fields">
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="Latitude"
+                                        value={position.lat}
+                                        onChange={(event) => updatePosition(index, "lat", event.target.value)}
+                                    />
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="Longitude"
+                                        value={position.lng}
+                                        onChange={(event) => updatePosition(index, "lng", event.target.value)}
+                                    />
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="Yaw"
+                                        value={position.yaw}
+                                        onChange={(event) => updatePosition(index, "yaw", event.target.value)}
+                                    />
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="Pitch"
+                                        value={position.pitch}
+                                        onChange={(event) => updatePosition(index, "pitch", event.target.value)}
+                                    />
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        placeholder="Zoom"
+                                        className="position-zoom"
+                                        value={position.zoom}
+                                        onChange={(event) => updatePosition(index, "zoom", event.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="paste-position"
+                                        onClick={() => {
+                                            handlePastePosition(index);
+                                        }}
+                                    >
+                                        Paste
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="inspect-position"
+                                        title="Open in Google Street View"
+                                        onClick={() => {
+                                            const inspectLink = buildInspectLink(position);
+                                            if (inspectLink) {
+                                                window.open(inspectLink, "_blank", "noopener,noreferrer");
+                                            }
+                                        }}
+                                        disabled={!buildInspectLink(position)}
+                                    >
+                                        🔍
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="remove-position"
+                                        title="Remove position"
+                                        onClick={() => removePosition(index)}
+                                        disabled={positions.length <= 1}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
                             </article>
                         ))}
                     </div>

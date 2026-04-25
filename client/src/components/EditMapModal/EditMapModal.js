@@ -12,11 +12,28 @@ function positionFromRow(row) {
         yaw: String(row?.yaw ?? row?.rotation ?? 0),
         pitch: String(row?.pitch ?? 0),
         zoom: String(row?.zoom ?? 1),
+        note: row?.note != null ? String(row.note) : "",
     };
 }
 
 function emptyPosition() {
-    return { id: null, lat: "", lng: "", yaw: "0", pitch: "0", zoom: "1" };
+    return { id: null, lat: "", lng: "", yaw: "0", pitch: "0", zoom: "1", note: "" };
+}
+
+function buildStreetViewLink(position) {
+    const lat = Number(position.lat);
+    const lng = Number(position.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const params = new URLSearchParams({
+        api: "1",
+        map_action: "pano",
+        viewpoint: `${lat},${lng}`,
+    });
+    const yaw = Number(position.yaw);
+    const pitch = Number(position.pitch);
+    if (Number.isFinite(yaw)) params.set("heading", String(yaw));
+    if (Number.isFinite(pitch)) params.set("pitch", String(-pitch));
+    return `https://www.google.com/maps/@?${params.toString()}`;
 }
 
 const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
@@ -79,6 +96,7 @@ const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
                 yaw: Number(p.yaw || 0),
                 pitch: Number(p.pitch || 0),
                 zoom: Number(p.zoom || 1),
+                note: typeof p.note === "string" && p.note.trim() ? p.note.trim() : null,
             }))
             .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
@@ -182,24 +200,43 @@ const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
                         </div>
 
                         <div className="edit-map-positions">
-                            {positions.map((p, i) => (
-                                <div className="edit-map-position" key={`pos-${i}`}>
-                                    <input type="text" inputMode="decimal" placeholder="Lat"
-                                        value={p.lat} onChange={(e) => updatePosition(i, "lat", e.target.value)} />
-                                    <input type="text" inputMode="decimal" placeholder="Lng"
-                                        value={p.lng} onChange={(e) => updatePosition(i, "lng", e.target.value)} />
-                                    <input type="text" inputMode="decimal" placeholder="Yaw"
-                                        value={p.yaw} onChange={(e) => updatePosition(i, "yaw", e.target.value)} />
-                                    <input type="text" inputMode="decimal" placeholder="Pitch"
-                                        value={p.pitch} onChange={(e) => updatePosition(i, "pitch", e.target.value)} />
-                                    <input type="text" inputMode="decimal" placeholder="Zoom"
-                                        value={p.zoom} onChange={(e) => updatePosition(i, "zoom", e.target.value)} />
-                                    <button type="button" className="edit-map-remove"
-                                        onClick={() => removePosition(i)} disabled={positions.length <= 1}>
-                                        Remove
-                                    </button>
-                                </div>
-                            ))}
+                            {positions.map((p, i) => {
+                                const inspectLink = buildStreetViewLink(p);
+                                return (
+                                    <div className="edit-map-position" key={`pos-${i}`}>
+                                        <input type="text" className="edit-map-note" placeholder="Note (only you can see)"
+                                            maxLength={500}
+                                            value={p.note} onChange={(e) => updatePosition(i, "note", e.target.value)} />
+                                        <div className="edit-map-position-fields">
+                                            <input type="text" inputMode="decimal" placeholder="Lat"
+                                                value={p.lat} onChange={(e) => updatePosition(i, "lat", e.target.value)} />
+                                            <input type="text" inputMode="decimal" placeholder="Lng"
+                                                value={p.lng} onChange={(e) => updatePosition(i, "lng", e.target.value)} />
+                                            <input type="text" inputMode="decimal" placeholder="Yaw"
+                                                value={p.yaw} onChange={(e) => updatePosition(i, "yaw", e.target.value)} />
+                                            <input type="text" inputMode="decimal" placeholder="Pitch"
+                                                value={p.pitch} onChange={(e) => updatePosition(i, "pitch", e.target.value)} />
+                                            <input type="text" inputMode="decimal" placeholder="Zoom" className="edit-map-zoom"
+                                                value={p.zoom} onChange={(e) => updatePosition(i, "zoom", e.target.value)} />
+                                            <button type="button" className="edit-map-icon-btn"
+                                                title="Open in Google Street View"
+                                                disabled={!inspectLink}
+                                                onClick={() => {
+                                                    if (inspectLink) {
+                                                        window.open(inspectLink, "_blank", "noopener,noreferrer");
+                                                    }
+                                                }}>
+                                                🔍
+                                            </button>
+                                            <button type="button" className="edit-map-icon-btn edit-map-remove"
+                                                title="Remove position"
+                                                onClick={() => removePosition(i)} disabled={positions.length <= 1}>
+                                                ×
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {error ? <p className="edit-map-error">{error}</p> : null}

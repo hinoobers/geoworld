@@ -141,13 +141,19 @@
 }
 
 .edit-map-position {
-    display: grid;
-    grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.7fr auto;
+    display: flex;
+    flex-direction: column;
     gap: 6px;
     padding: 6px;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(201, 194, 255, 0.15);
+}
+
+.edit-map-position-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr 0.7fr 0.7fr 0.5fr auto auto;
+    gap: 6px;
 }
 
 .edit-map-position input {
@@ -161,29 +167,57 @@
     min-width: 0;
 }
 
+.edit-map-note {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.edit-map-note::placeholder {
+    color: rgba(218, 216, 245, 0.5);
+    font-style: italic;
+}
+
 .edit-map-position input:focus {
     outline: none;
     border-color: rgba(153, 122, 255, 0.6);
 }
 
-.edit-map-remove {
-    padding: 8px 12px;
-    border: none;
+.edit-map-icon-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid rgba(201, 194, 255, 0.25);
     border-radius: 8px;
-    background: rgba(255, 154, 162, 0.18);
-    color: #ff9aa2;
+    background: rgba(255, 255, 255, 0.06);
+    color: #f5f6ff;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.edit-map-icon-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(201, 194, 255, 0.45);
+}
+
+.edit-map-icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.edit-map-remove {
+    background: rgba(255, 154, 162, 0.15);
+    border-color: rgba(255, 154, 162, 0.4);
+    color: #ff9aa2;
+    font-size: 1.3rem;
+    font-weight: 700;
 }
 
 .edit-map-remove:hover:not(:disabled) {
     background: rgba(255, 154, 162, 0.3);
-}
-
-.edit-map-remove:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
 }
 
 .edit-map-error {
