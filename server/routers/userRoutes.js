@@ -117,7 +117,7 @@ router.post("/login", async (req, res) => {
 
 router.post("/change-password", middleware, async (req, res) => {
     const { current_password, new_password } = req.body;
-    
+
 
     if(!current_password || !new_password) {
         return res.status(400).json({ error: "Current password and new password are required" });
@@ -125,6 +125,10 @@ router.post("/change-password", middleware, async (req, res) => {
 
     if(typeof current_password !== "string" || typeof new_password !== "string") {
         return res.status(400).json({ error: "Current password and new password must be strings" });
+    }
+
+    if(current_password === new_password) {
+        return res.status(400).json({ error: "New password must be different from current password" });
     }
 
     if(new_password.length < 6) {

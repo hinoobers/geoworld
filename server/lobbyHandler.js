@@ -44,7 +44,15 @@ function normalizeRoundTimeSeconds(value) {
     return ALLOWED_ROUND_TIME_SECONDS.has(n) ? n : 0;
 }
 
-function createLobby({ mapId, mapName, host, allowMove = true, allowZoom = true, allowLook = true, roundTimeSeconds = 0 }) {
+function normalizeRoundCount(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 5;
+    if (n < 1) return 1;
+    if (n > 50) return 50;
+    return Math.floor(n);
+}
+
+function createLobby({ mapId, mapName, host, allowMove = true, allowZoom = true, allowLook = true, roundTimeSeconds = 0, roundCount = 5 }) {
     const code = generateLobbyCode();
     const hostParticipant = buildParticipant(host, "A");
 
@@ -53,6 +61,7 @@ function createLobby({ mapId, mapName, host, allowMove = true, allowZoom = true,
         map_id: mapId,
         map_name: mapName || null,
         round_time_seconds: normalizeRoundTimeSeconds(roundTimeSeconds),
+        round_count: normalizeRoundCount(roundCount),
         allow_move: Boolean(allowMove),
         allow_zoom: Boolean(allowZoom),
         allow_look: Boolean(allowLook),
@@ -201,6 +210,7 @@ function serializeLobby(lobby) {
         map_id: lobby.map_id,
         map_name: lobby.map_name ?? null,
         round_time_seconds: Number(lobby.round_time_seconds) || 0,
+        round_count: Number(lobby.round_count) || 5,
         allow_move: lobby.allow_move !== false,
         allow_zoom: lobby.allow_zoom !== false,
         allow_look: lobby.allow_look !== false,
@@ -256,4 +266,5 @@ module.exports = {
     disbandLobby,
     normalizeRoundTimeSeconds,
     ALLOWED_ROUND_TIME_SECONDS,
+    normalizeRoundCount,
 };

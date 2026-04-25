@@ -267,9 +267,10 @@ async function createGame(mapId, mode, ownerId, requestedRounds, options = {}) {
     }
 
     const maxRounds = positions.length;
+    const singleplayerCap = Math.min(5, maxRounds);
     const roundsToPlay = requestedRounds && requestedRounds > 0
         ? Math.min(requestedRounds, maxRounds)
-        : maxRounds;
+        : (mode === "singleplayer" ? singleplayerCap : maxRounds);
     const selectedPositions = shuffle(positions).slice(0, roundsToPlay);
 
     const game = {

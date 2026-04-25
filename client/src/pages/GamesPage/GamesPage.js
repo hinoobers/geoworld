@@ -88,6 +88,31 @@ const GamesPage = () => {
         return game.result;
     };
 
+    const formatShortScore = (score) => {
+        const n = Math.max(0, Math.round(Number(score) || 0));
+        if (n < 1000) return String(n);
+        return `${Math.round(n / 1000)}K`;
+    };
+
+    const singleplayerBadge = (game) => {
+        if (game.status !== "completed") {
+            return { label: "-", className: "games-result-unknown" };
+        }
+        const score = Number(game.score) || 0;
+        const totalRounds = Number(game.total_rounds) || 0;
+        const max = totalRounds * 5000;
+        const ratio = max > 0 ? score / max : 0;
+
+        let tier = "bad";
+        if (ratio >= 0.6) tier = "good";
+        else if (ratio >= 0.3) tier = "mid";
+
+        return {
+            label: formatShortScore(score),
+            className: `games-result-score games-result-score-${tier}`,
+        };
+    };
+
     return (
         <div className="games-page">
             <Header />
@@ -145,9 +170,18 @@ const GamesPage = () => {
                             <article className="games-card" key={`game-${game.game_id}`}>
                                 <div className="games-card-head">
                                     <h3>{game.map_name || `Map #${game.map_id}`}</h3>
-                                    <span className={`games-result games-result-${String(game.result || "unknown")}`}>
-                                        {renderResultLabel(game)}
-                                    </span>
+                                    {game.mode === "singleplayer" ? (() => {
+                                        const badge = singleplayerBadge(game);
+                                        return (
+                                            <span className={`games-result ${badge.className}`}>
+                                                {badge.label}
+                                            </span>
+                                        );
+                                    })() : (
+                                        <span className={`games-result games-result-${String(game.result || "unknown")}`}>
+                                            {renderResultLabel(game)}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <p className="games-meta-line">

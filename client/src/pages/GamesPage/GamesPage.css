@@ -114,6 +114,25 @@
     border-color: rgba(255, 209, 102, 0.5);
 }
 
+.games-result-score {
+    font-variant-numeric: tabular-nums;
+}
+
+.games-result-score-good {
+    color: #8ff2b7;
+    border-color: rgba(143, 242, 183, 0.5);
+}
+
+.games-result-score-mid {
+    color: #ffd166;
+    border-color: rgba(255, 209, 102, 0.5);
+}
+
+.games-result-score-bad {
+    color: #ff9aa2;
+    border-color: rgba(255, 154, 162, 0.5);
+}
+
 .games-meta-line {
     margin: 8px 0 0;
     color: #c9c2ff;

@@ -57,6 +57,7 @@ const LobbyPage = () => {
     const [mapPage, setMapPage] = useState(1);
     const [updatingMap, setUpdatingMap] = useState(false);
     const [selectedRoundTime, setSelectedRoundTime] = useState(0);
+    const [selectedRoundCount, setSelectedRoundCount] = useState(5);
     const [selectedAllowMove, setSelectedAllowMove] = useState(true);
     const [selectedAllowZoom, setSelectedAllowZoom] = useState(true);
     const [selectedAllowLook, setSelectedAllowLook] = useState(true);
@@ -253,6 +254,7 @@ const LobbyPage = () => {
         if (!amHost) return;
         setSelectedMapId(String(lobby?.map_id || ""));
         setSelectedRoundTime(Number(lobby?.round_time_seconds) || 0);
+        setSelectedRoundCount(Number(lobby?.round_count) || 5);
         setSelectedAllowMove(lobby?.allow_move !== false);
         setSelectedAllowZoom(lobby?.allow_zoom !== false);
         setSelectedAllowLook(lobby?.allow_look !== false);
@@ -289,6 +291,7 @@ const LobbyPage = () => {
                 body: JSON.stringify({
                     map_id: nextMapId,
                     round_time_seconds: Number(selectedRoundTime) || 0,
+                    round_count: Number(selectedRoundCount) || 5,
                     allow_move: selectedAllowMove,
                     allow_zoom: selectedAllowZoom,
                     allow_look: selectedAllowLook,
@@ -390,6 +393,16 @@ const LobbyPage = () => {
             setMapPage(modalTotalPages);
         }
     }, [mapPage, modalTotalPages]);
+
+    useEffect(() => {
+        const selectedMap = availableMaps.find(
+            (m) => String(m.map_id) === String(selectedMapId)
+        );
+        const cap = Number(selectedMap?.positions_count);
+        if (Number.isFinite(cap) && cap >= 1 && selectedRoundCount > cap) {
+            setSelectedRoundCount(cap);
+        }
+    }, [availableMaps, selectedMapId, selectedRoundCount]);
 
     if (!activeToken) {
         return (
@@ -527,8 +540,8 @@ const LobbyPage = () => {
                         <h2>Edit Lobby Settings</h2>
                         <p>Pick a map and choose the round timer before starting the game.</p>
 
-                        <section className="lobby-modal-controls" style={{ marginBottom: 12, flexWrap: "wrap", gap: 12 }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <section className="lobby-modal-settings-row">
+                            <label className="lobby-modal-setting">
                                 <span>Time between rounds</span>
                                 <select
                                     value={String(selectedRoundTime)}
@@ -543,7 +556,32 @@ const LobbyPage = () => {
                                     ))}
                                 </select>
                             </label>
-                            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <label className="lobby-modal-setting">
+                                <span>Rounds</span>
+                                <select
+                                    value={String(selectedRoundCount)}
+                                    onChange={(event) => setSelectedRoundCount(Number(event.target.value))}
+                                    disabled={updatingMap}
+                                    className="lobby-modal-sort"
+                                >
+                                    {(() => {
+                                        const selectedMap = availableMaps.find(
+                                            (m) => String(m.map_id) === String(selectedMapId)
+                                        );
+                                        const cap = Math.max(
+                                            1,
+                                            Math.min(20, Number(selectedMap?.positions_count) || 20)
+                                        );
+                                        return Array.from({ length: cap }, (_, i) => i + 1).map((n) => (
+                                            <option key={n} value={String(n)}>{n}</option>
+                                        ));
+                                    })()}
+                                </select>
+                            </label>
+                        </section>
+
+                        <section className="lobby-modal-toggles">
+                            <label>
                                 <input
                                     type="checkbox"
                                     checked={selectedAllowMove}
@@ -552,7 +590,7 @@ const LobbyPage = () => {
                                 />
                                 Allow moving
                             </label>
-                            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <label>
                                 <input
                                     type="checkbox"
                                     checked={selectedAllowZoom}
@@ -561,7 +599,7 @@ const LobbyPage = () => {
                                 />
                                 Allow zoom
                             </label>
-                            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <label>
                                 <input
                                     type="checkbox"
                                     checked={selectedAllowLook}

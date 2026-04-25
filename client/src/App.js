@@ -18,6 +18,7 @@ import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
 import TermsOfService from './pages/Legal/TermsOfService';
 import Settings from './pages/Account/Settings/Settings';
 import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
+import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
