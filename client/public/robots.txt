@@ -13,4 +13,4 @@ Disallow: /lobby/
 Disallow: /multiplayer/
 Disallow: /admin
 
-Sitemap: https://geoworld.pnglin.byenoob.com/sitemap.xml
+Sitemap: https://geoworld.byenoob.com/sitemap.xml
