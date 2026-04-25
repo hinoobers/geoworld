@@ -75,6 +75,13 @@
     margin: 0;
 }
 
+.result-points {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #f5f6ff;
+    letter-spacing: 0.02em;
+}
+
 .continue-button {
     border: none;
     border-radius: 999px;
@@ -129,6 +136,24 @@
 .hud-left h1 {
     margin: 8px 0 6px;
     font-size: 1.4rem;
+}
+
+.play-score {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    color: #d8e8f6;
+    font-variant-numeric: tabular-nums;
+}
+
+.play-score strong {
+    color: #f5f6ff;
+    font-size: 1.05rem;
+}
+
+.play-muted {
+    margin: 0 0 6px;
+    color: #aab8c8;
+    font-size: 0.9rem;
 }
 
 .hud-actions {

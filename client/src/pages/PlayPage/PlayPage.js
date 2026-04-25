@@ -385,7 +385,8 @@ const PlayPage = () => {
                     <header className="result-topbar">
                         <div>
                             <h2>Round Result</h2>
-                            <p>+{latestRoundResult.points} points</p>
+                            <p>Actual: {latestRoundResult.actual.lat}, {latestRoundResult.actual.lng}</p>
+                            <p>Your guess: {latestRoundResult.guess.lat}, {latestRoundResult.guess.lng}</p>
                         </div>
                         <div className="result-meta">
                             <span>Distance {latestRoundResult.distance_km} km</span>
@@ -414,8 +415,7 @@ const PlayPage = () => {
 
                     <section className="result-footer">
                         <div className="result-summary-inline">
-                            <p>Actual: {latestRoundResult.actual.lat}, {latestRoundResult.actual.lng}</p>
-                            <p>Your guess: {latestRoundResult.guess.lat}, {latestRoundResult.guess.lng}</p>
+                            <p className="result-points">+{latestRoundResult.points} points</p>
                         </div>
 
                         <button
@@ -461,7 +461,15 @@ const PlayPage = () => {
                         </div>
 
                         <h1>GeoWorld Play</h1>
-                        <p className="play-muted">Good luck, and have fun!</p>
+                        {game ? (
+                            <p className="play-score">
+                                Round {game.current_round} / {game.total_rounds}
+                                {" · "}
+                                <strong>{Number(game.total_score || 0).toLocaleString()} pts</strong>
+                            </p>
+                        ) : (
+                            <p className="play-muted">Good luck, and have fun!</p>
+                        )}
 
                         {!game ? (
                             <>
