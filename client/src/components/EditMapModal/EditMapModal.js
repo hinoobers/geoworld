@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "./EditMapModal.css";
 
@@ -47,6 +47,8 @@ const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
     const [deleting, setDeleting] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [error, setError] = useState("");
+    const [initialSnapshot, setInitialSnapshot] = useState(null);
+    const [shaking, setShaking] = useState(false);
 
     useEffect(() => {
         if (!map?.map_id || !token) return;
@@ -61,7 +63,14 @@ const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
                 if (!res.ok) throw new Error(body?.error || "Failed to load map");
                 if (cancelled) return;
                 const rows = Array.isArray(body?.map_positions) ? body.map_positions : [];
-                setPositions(rows.length > 0 ? rows.map(positionFromRow) : [emptyPosition()]);
+                const initialPositions = rows.length > 0 ? rows.map(positionFromRow) : [emptyPosition()];
+                setPositions(initialPositions);
+                setInitialSnapshot({
+                    name: map?.name || "",
+                    description: map?.description || "",
+                    isPublic: Boolean(map?.is_public),
+                    positions: initialPositions,
+                });
             } catch (err) {
                 if (!cancelled) setError(err.message || "Failed to load map");
             } finally {
@@ -69,7 +78,36 @@ const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
             }
         })();
         return () => { cancelled = true; };
-    }, [map?.map_id, token]);
+    }, [map?.map_id, map?.name, map?.description, map?.is_public, token]);
+
+    const isDirty = useMemo(() => {
+        if (!initialSnapshot) return false;
+        if (name !== initialSnapshot.name) return true;
+        if ((description || "") !== (initialSnapshot.description || "")) return true;
+        if (isPublic !== initialSnapshot.isPublic) return true;
+        if (positions.length !== initialSnapshot.positions.length) return true;
+        const fields = ["id", "lat", "lng", "yaw", "pitch", "zoom", "note"];
+        for (let i = 0; i < positions.length; i += 1) {
+            const a = positions[i];
+            const b = initialSnapshot.positions[i];
+            for (const f of fields) {
+                if (String(a?.[f] ?? "") !== String(b?.[f] ?? "")) return true;
+            }
+        }
+        return false;
+    }, [initialSnapshot, name, description, isPublic, positions]);
+
+    const handleBackdropClick = () => {
+        if (loading || saving || deleting) {
+            return;
+        }
+        if (isDirty) {
+            setShaking(true);
+            setTimeout(() => setShaking(false), 450);
+            return;
+        }
+        onClose?.();
+    };
 
     const updatePosition = (index, field, value) => {
         setPositions((list) =>
@@ -154,8 +192,11 @@ const EditMapModal = ({ map, onClose, onSaved, onDeleted }) => {
     };
 
     return (
-        <div className="edit-map-backdrop" onClick={onClose}>
-            <div className="edit-map-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="edit-map-backdrop" onClick={handleBackdropClick}>
+            <div
+                className={`edit-map-modal${shaking ? " is-shaking" : ""}`}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="edit-map-head">
                     <h2>Edit Map</h2>
                     <button type="button" className="edit-map-close" onClick={onClose}>×</button>
