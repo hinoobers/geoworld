@@ -1,3 +1,16 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /home
+Disallow: /play
+Disallow: /maps/
+Disallow: /community
+Disallow: /leaderboard
+Disallow: /games
+Disallow: /daily-results
+Disallow: /account-settings
+Disallow: /lobby/
+Disallow: /multiplayer/
+Disallow: /admin
+
+Sitemap: https://geoworld.pnglin.byenoob.com/sitemap.xml

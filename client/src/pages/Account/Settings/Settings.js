@@ -12,31 +12,39 @@ const Settings = () => {
     const navigate = useNavigate();
 
     const handlePasswordChange = async (event) => {
-        const response = await fetch(process.env.REACT_APP_API_URL + "/users/change-password", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ current_password: currentPassword, new_password: password }),
-        });
-        const result = await response.json();
-        if (result?.error) {
-            setError(result.error);
-        }
-        if (result?.message) {
-            setError(result.message);
+        setError("");
+        let response;
+        try {
+            response = await fetch(process.env.REACT_APP_API_URL + "/users/change-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ current_password: currentPassword, new_password: password }),
+            });
+        } catch (err) {
+            setError("Failed to change password. Please try again.");
+            return;
         }
 
-        if(response.ok) {
-            setTimeout(() => {
-                const message = encodeURIComponent("Password changed successfully. Please log in again.");
-                navigate(`/login?message=${message}`);
-            }, 1000);
-            setTimeout(() => {
-                //logout();
-            }, 1250);
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            setError(result?.error || result?.message || "Failed to change password.");
+            return;
         }
+
+        setError("Password changed successfully. Logging you out...");
+        setPassword("");
+        setCurrentPassword("");
+
+        setTimeout(() => {
+            logout();
+            const message = encodeURIComponent("Password changed successfully. Please log in again.");
+            const redirect = encodeURIComponent("/account-settings");
+            navigate(`/login?message=${message}&redirect=${redirect}`, { replace: true });
+        }, 1000);
     };
 
     const handleUsernameChange = async (event) => {    

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "../../../components/Header/Header";
 import { useAuth } from "../../../context/AuthContext";
@@ -21,7 +21,7 @@ const Login = () => {
     const redirectTo = safeRedirectTarget(searchParams.get("redirect"));
     const message = searchParams.get("message");
 
-    useState(() => {
+    useEffect(() => {
         if (message) {
             setError(message);
         }
