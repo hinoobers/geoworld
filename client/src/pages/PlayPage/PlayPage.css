@@ -33,8 +33,9 @@
 
 .result-topbar p {
     margin-top: 4px;
-    color: #ffd166;
-    font-weight: 700;
+    color: #aab8c8;
+    font-size: 0.9rem;
+    font-weight: 400;
 }
 
 .result-meta {
@@ -78,7 +79,7 @@
 .result-points {
     font-size: 1.4rem;
     font-weight: 800;
-    color: #f5f6ff;
+    color: #ffd166;
     letter-spacing: 0.02em;
 }
 
