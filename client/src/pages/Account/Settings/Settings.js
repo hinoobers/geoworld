@@ -40,10 +40,10 @@ const Settings = () => {
         setCurrentPassword("");
 
         setTimeout(() => {
-            logout();
             const message = encodeURIComponent("Password changed successfully. Please log in again.");
             const redirect = encodeURIComponent("/account-settings");
             navigate(`/login?message=${message}&redirect=${redirect}`, { replace: true });
+            setTimeout(() => logout(), 0);
         }, 1000);
     };
 
