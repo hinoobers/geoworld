@@ -3,6 +3,47 @@ const router = express.Router();
 const middleware = require("../auth").middleware;
 const gameHandler = require("../gameHandler");
 const db = require("../database");
+const { insertMapPositionWithFallbacks } = require("./mapRoutes");
+const { generateDynamicPositions } = require("../streetviewDynamic");
+
+async function createDynamicMap(userId) {
+    const positions = await generateDynamicPositions(5);
+
+    const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const name = `Dynamic — ${createdAt}`;
+    const description = "Auto-generated random Street View locations.";
+
+    let inserted;
+    try {
+        inserted = await db.query(
+            "INSERT INTO maps (name, description, created_by, is_dynamic) VALUES (?, ?, ?, 1)",
+            [name, description, userId]
+        );
+    } catch {
+        inserted = await db.query(
+            "INSERT INTO maps (name, description, created_by) VALUES (?, ?, ?)",
+            [name, description, userId]
+        );
+        if (inserted?.insertId) {
+            try {
+                await db.query("UPDATE maps SET is_dynamic = 1 WHERE id = ?", [inserted.insertId]);
+            } catch {
+                /* column may not exist; ignore */
+            }
+        }
+    }
+
+    const mapId = inserted?.insertId;
+    if (!mapId) {
+        throw new Error("Failed to create dynamic map record");
+    }
+
+    for (const position of positions) {
+        await insertMapPositionWithFallbacks(mapId, position);
+    }
+
+    return { mapId, positions };
+}
 
 let cachedDailyRotationDate = null;
 
@@ -196,20 +237,40 @@ router.get("/gameinfo", middleware, (req, res) => {
 });
 
 router.post("/create-game", middleware, async (req, res) => {
-    const { map_id, mode, round_count, allow_move, allow_zoom, allow_look } = req.body;
+    const { map_id, mode, round_count, allow_move, allow_zoom, allow_look, dynamic } = req.body;
     // mode can be "singleplayer" or "multiplayer", in multiplayer, a lobby is created instead, start-game is not needed, if multiplayer, then start-game needs to be called
 
-    if(!map_id || !mode) {
-        return res.status(400).json({ error: "map_id and mode are required" });
+    if (!mode) {
+        return res.status(400).json({ error: "mode is required" });
     }
 
     if(mode !== "singleplayer" && mode !== "multiplayer") {
         return res.status(400).json({ error: "mode must be either singleplayer or multiplayer" });
     }
 
-    const parsedMapId = Number(map_id);
-    if (!Number.isInteger(parsedMapId) || parsedMapId <= 0) {
-        return res.status(400).json({ error: "map_id must be a positive integer" });
+    const wantDynamic = Boolean(dynamic);
+    if (wantDynamic && mode !== "singleplayer") {
+        return res.status(400).json({ error: "Dynamic maps are only supported for singleplayer" });
+    }
+
+    let parsedMapId;
+    if (wantDynamic) {
+        try {
+            const created = await createDynamicMap(req.user.id);
+            parsedMapId = created.mapId;
+        } catch (error) {
+            console.error("[gameRoutes] dynamic map creation failed", error?.message);
+            const message = error?.message || "Failed to generate dynamic map";
+            return res.status(503).json({ error: message });
+        }
+    } else {
+        if (!map_id) {
+            return res.status(400).json({ error: "map_id is required" });
+        }
+        parsedMapId = Number(map_id);
+        if (!Number.isInteger(parsedMapId) || parsedMapId <= 0) {
+            return res.status(400).json({ error: "map_id must be a positive integer" });
+        }
     }
 
     try {

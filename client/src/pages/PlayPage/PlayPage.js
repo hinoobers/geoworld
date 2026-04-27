@@ -121,7 +121,7 @@ const PlayPage = () => {
     const { token, isLoggedIn } = useAuth();
 
     const [maps, setMaps] = useState([]);
-    const [selectedMapId, setSelectedMapId] = useState("");
+    const [selectedMapId, setSelectedMapId] = useState("dynamic");
     const [game, setGame] = useState(null);
     const [pendingGame, setPendingGame] = useState(null);
     const [guessLat, setGuessLat] = useState("");
@@ -316,14 +316,17 @@ const PlayPage = () => {
         setError("");
         setLatestRoundResult(null);
 
+        const isDynamic = selectedMapId === "dynamic";
+
         try {
             setLoading(true);
             const created = await apiRequest("/games/create-game", token, {
                 method: "POST",
-                body: JSON.stringify({
-                    map_id: Number(selectedMapId),
-                    mode: "singleplayer",
-                }),
+                body: JSON.stringify(
+                    isDynamic
+                        ? { mode: "singleplayer", dynamic: true }
+                        : { map_id: Number(selectedMapId), mode: "singleplayer" }
+                ),
             });
 
             const gameInfo = await apiRequest(`/games/gameinfo?game_id=${created.game_id}`, token);
@@ -478,9 +481,9 @@ const PlayPage = () => {
                                     id="map-select"
                                     value={selectedMapId}
                                     onChange={(event) => setSelectedMapId(event.target.value)}
-                                    disabled={loading || maps.length === 0}
+                                    disabled={loading}
                                 >
-                                    {maps.length === 0 ? <option value="">No maps available</option> : null}
+                                    <option value="dynamic">🌍 Dynamic Map (random worldwide)</option>
                                     {maps.map((map) => (
                                         <option key={map.map_id} value={String(map.map_id)}>
                                             {map.name} ({map.positions_count} rounds)
@@ -489,7 +492,7 @@ const PlayPage = () => {
                                 </select>
 
                                 <button type="button" onClick={handleStartGame} disabled={loading || !selectedMapId}>
-                                    Start Singleplayer Game
+                                    {selectedMapId === "dynamic" ? "Start Dynamic Game" : "Start Singleplayer Game"}
                                 </button>
                             </>
                         ) : null}

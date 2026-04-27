@@ -145,7 +145,12 @@ router.get("/pos/:id", middleware, async (req, res) => {
 router.get("/list", middleware, async (req, res) => {
     // return list of maps with map_id, map_name, description, map_positions
     try {
-        const maps = await query("SELECT * FROM maps");
+        let maps;
+        try {
+            maps = await query("SELECT * FROM maps WHERE is_dynamic = 0 OR is_dynamic IS NULL");
+        } catch {
+            maps = await query("SELECT * FROM maps");
+        }
 
         const mapsWithCounts = await Promise.all(
             maps.map(async (map) => {
@@ -359,3 +364,4 @@ router.delete("/:id", middleware, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.insertMapPositionWithFallbacks = insertMapPositionWithFallbacks;
