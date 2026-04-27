@@ -88,9 +88,11 @@ async function fetchPanoramaMetadata(lat, lng, apiKey) {
         + `&key=${encodeURIComponent(apiKey)}`;
 
     const response = await fetch(url);
-    if (!response.ok) return null;
-    return response.json().catch(() => null);
+    const body = await response.json().catch(() => null);
+    return { httpOk: response.ok, status: response.status, body };
 }
+
+const statusCounts = {};
 
 async function pickValidStreetView(apiKey) {
     for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_POSITION; attempt += 1) {
@@ -98,12 +100,24 @@ async function pickValidStreetView(apiKey) {
         const lat = jitter(anchor.lat);
         const lng = jitter(anchor.lng);
 
-        const metadata = await fetchPanoramaMetadata(lat, lng, apiKey);
-        if (metadata?.status === "OK" && metadata.location) {
+        const result = await fetchPanoramaMetadata(lat, lng, apiKey);
+        const apiStatus = result?.body?.status || `HTTP_${result?.status || "?"}`;
+        statusCounts[apiStatus] = (statusCounts[apiStatus] || 0) + 1;
+
+        if (result?.body?.error_message) {
+            console.error(
+                "[streetviewDynamic] Google API error:",
+                apiStatus,
+                "-",
+                result.body.error_message
+            );
+        }
+
+        if (result?.body?.status === "OK" && result.body.location) {
             return {
-                lat: Number(metadata.location.lat),
-                lng: Number(metadata.location.lng),
-                pano_id: metadata.pano_id || null,
+                lat: Number(result.body.location.lat),
+                lng: Number(result.body.location.lng),
+                pano_id: result.body.pano_id || null,
             };
         }
     }
@@ -115,6 +129,8 @@ async function generateDynamicPositions(count) {
     if (!apiKey) {
         throw new Error("Street View API key not configured");
     }
+
+    Object.keys(statusCounts).forEach((k) => delete statusCounts[k]);
 
     const seen = new Set();
     const positions = [];
@@ -130,6 +146,10 @@ async function generateDynamicPositions(count) {
             chosen = candidate;
         }
         if (!chosen) {
+            console.error(
+                "[streetviewDynamic] giving up — API status counts:",
+                JSON.stringify(statusCounts)
+            );
             throw new Error("Could not find enough valid Street View locations");
         }
         positions.push({
