@@ -116,6 +116,11 @@ function isCompleted(game) {
 }
 
 const PlayPage = () => {
+    if(true) {
+        return (<div className="page">
+            Under development due to ongoing updates. Check back later!
+        </div>);
+    }
     const navigate = useNavigate();
     const location = useLocation();
     const { token, isLoggedIn } = useAuth();

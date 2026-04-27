@@ -37,6 +37,12 @@ const LandingPage = () => {
         };
     }, []);
 
+    if(true) {
+        return (<div className="page">
+            Under development due to ongoing updates. Check back later!
+        </div>);
+    }
+
     return (
         <div className="page">
             <Header />
