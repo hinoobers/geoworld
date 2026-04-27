@@ -19,6 +19,7 @@ import TermsOfService from './pages/Legal/TermsOfService';
 import Settings from './pages/Account/Settings/Settings';
 import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
+import CountryStreakPage from './pages/CountryStreakPage/CountryStreakPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/maps/create" element={<RequireUser><CreateMapPage /></RequireUser>} />
           <Route path="/community" element={<RequireUser><CommunityMapsPage /></RequireUser>} />
           <Route path="/leaderboard" element={<RequireUser><LeaderboardPage /></RequireUser>} />
+          <Route path="/country-streak" element={<RequireUser><CountryStreakPage /></RequireUser>} />
           <Route path="/games" element={<RequireUser><GamesPage /></RequireUser>} />
           <Route path="/daily-results" element={<RequireUser><DailyResultsPage /></RequireUser>} />
           <Route path="/account-settings" element={<RequireUser><Settings /></RequireUser>} />

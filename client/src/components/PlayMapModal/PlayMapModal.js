@@ -16,6 +16,8 @@ const PlayMapModal = ({ map, onClose }) => {
 
     if (!map) return null;
 
+    const isWorldwide = Boolean(map?.is_worldwide);
+
     const startSingleplayer = async () => {
         if (!token) {
             setError("You must be logged in to play");
@@ -24,24 +26,33 @@ const PlayMapModal = ({ map, onClose }) => {
         setError("");
         setLoading(true);
         try {
+            const body = isWorldwide
+                ? {
+                    mode: "singleplayer",
+                    dynamic: true,
+                    allow_move: allowMove,
+                    allow_zoom: allowZoom,
+                    allow_look: allowLook,
+                }
+                : {
+                    map_id: map.map_id,
+                    mode: "singleplayer",
+                    allow_move: allowMove,
+                    allow_zoom: allowZoom,
+                    allow_look: allowLook,
+                };
             const response = await fetch(`${API_BASE_URL}/games/create-game`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    map_id: map.map_id,
-                    mode: "singleplayer",
-                    allow_move: allowMove,
-                    allow_zoom: allowZoom,
-                    allow_look: allowLook,
-                }),
+                body: JSON.stringify(body),
             });
-            const body = await response.json().catch(() => null);
-            if (!response.ok) throw new Error(body?.error || "Failed to start game");
+            const result = await response.json().catch(() => null);
+            if (!response.ok) throw new Error(result?.error || "Failed to start game");
             onClose();
-            navigate(`/play?game=${encodeURIComponent(body.game_id)}`);
+            navigate(`/play?game=${encodeURIComponent(result.game_id)}`);
         } catch (nextError) {
             setError(nextError.message || "Failed to start game");
         } finally {
@@ -120,11 +131,13 @@ const PlayMapModal = ({ map, onClose }) => {
 
                 <div className="play-modal-actions">
                     <button type="button" className="play-modal-primary" onClick={startSingleplayer} disabled={loading}>
-                        Singleplayer
+                        {isWorldwide ? "Start Worldwide" : "Singleplayer"}
                     </button>
-                    <button type="button" className="play-modal-secondary" onClick={createLobby} disabled={loading}>
-                        {loading ? "Creating lobby..." : "Create Lobby"}
-                    </button>
+                    {!isWorldwide ? (
+                        <button type="button" className="play-modal-secondary" onClick={createLobby} disabled={loading}>
+                            {loading ? "Creating lobby..." : "Create Lobby"}
+                        </button>
+                    ) : null}
                 </div>
 
                 {error ? <p className="play-modal-error">{error}</p> : null}

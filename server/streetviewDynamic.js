@@ -165,6 +165,59 @@ async function generateDynamicPositions(count) {
     return positions;
 }
 
+async function reverseGeocodeCountry(lat, lng, apiKey) {
+    const url = "https://maps.googleapis.com/maps/api/geocode/json"
+        + `?latlng=${lat},${lng}`
+        + "&result_type=country"
+        + "&language=en"
+        + `&key=${encodeURIComponent(apiKey)}`;
+
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const body = await response.json().catch(() => null);
+    if (body?.error_message) {
+        console.error(
+            "[streetviewDynamic] Geocoding API error:",
+            body.status,
+            "-",
+            body.error_message
+        );
+    }
+    if (body?.status !== "OK" || !body.results?.[0]) return null;
+    const country = body.results[0].address_components?.find((component) =>
+        component.types?.includes("country")
+    );
+    if (!country?.short_name) return null;
+    return {
+        code: country.short_name,
+        name: country.long_name || country.short_name,
+    };
+}
+
+async function pickStreetViewWithCountry(excludeCountryCodes = []) {
+    const apiKey = process.env.GOOGLE_STREET_VIEW_API_KEY;
+    if (!apiKey) throw new Error("Street View API key not configured");
+
+    const exclude = new Set(excludeCountryCodes);
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+        const candidate = await pickValidStreetView(apiKey);
+        if (!candidate) continue;
+        const country = await reverseGeocodeCountry(candidate.lat, candidate.lng, apiKey);
+        if (!country?.code) continue;
+        if (exclude.has(country.code)) continue;
+        return {
+            lat: candidate.lat,
+            lng: candidate.lng,
+            pano_id: candidate.pano_id,
+            country_code: country.code,
+            country_name: country.name,
+        };
+    }
+    return null;
+}
+
 module.exports = {
     generateDynamicPositions,
+    pickStreetViewWithCountry,
+    reverseGeocodeCountry,
 };

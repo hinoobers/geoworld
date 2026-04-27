@@ -121,7 +121,7 @@ const PlayPage = () => {
     const { token, isLoggedIn } = useAuth();
 
     const [maps, setMaps] = useState([]);
-    const [selectedMapId, setSelectedMapId] = useState("dynamic");
+    const [selectedMapId, setSelectedMapId] = useState("worldwide");
     const [game, setGame] = useState(null);
     const [pendingGame, setPendingGame] = useState(null);
     const [guessLat, setGuessLat] = useState("");
@@ -316,14 +316,14 @@ const PlayPage = () => {
         setError("");
         setLatestRoundResult(null);
 
-        const isDynamic = selectedMapId === "dynamic";
+        const isWorldwide = selectedMapId === "worldwide";
 
         try {
             setLoading(true);
             const created = await apiRequest("/games/create-game", token, {
                 method: "POST",
                 body: JSON.stringify(
-                    isDynamic
+                    isWorldwide
                         ? { mode: "singleplayer", dynamic: true }
                         : { map_id: Number(selectedMapId), mode: "singleplayer" }
                 ),
@@ -483,7 +483,7 @@ const PlayPage = () => {
                                     onChange={(event) => setSelectedMapId(event.target.value)}
                                     disabled={loading}
                                 >
-                                    <option value="dynamic">🌍 Dynamic Map (random worldwide)</option>
+                                    <option value="worldwide">🌍 Worldwide (random Street View)</option>
                                     {maps.map((map) => (
                                         <option key={map.map_id} value={String(map.map_id)}>
                                             {map.name} ({map.positions_count} rounds)
@@ -492,7 +492,7 @@ const PlayPage = () => {
                                 </select>
 
                                 <button type="button" onClick={handleStartGame} disabled={loading || !selectedMapId}>
-                                    {selectedMapId === "dynamic" ? "Start Dynamic Game" : "Start Singleplayer Game"}
+                                    {selectedMapId === "worldwide" ? "Start Worldwide Game" : "Start Singleplayer Game"}
                                 </button>
                             </>
                         ) : null}

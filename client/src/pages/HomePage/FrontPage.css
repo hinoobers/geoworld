@@ -242,6 +242,89 @@
     background: linear-gradient(130deg, #975635, #432332);
 }
 
+.map-card-worldwide {
+    background: linear-gradient(130deg, #2bb4a3, #1d6e96);
+    border: 1px solid rgba(143, 230, 220, 0.4);
+}
+
+.gamemodes-section {
+    margin-top: 18px;
+}
+
+.gamemodes-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.gamemode-card {
+    border-radius: 14px;
+    padding: 16px;
+    background: rgba(16, 16, 31, 0.85);
+    border: 1px solid rgba(164, 140, 255, 0.26);
+    cursor: pointer;
+    transition: transform 120ms ease, filter 120ms ease, border-color 120ms ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gamemode-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(201, 194, 255, 0.5);
+    filter: brightness(1.05);
+}
+
+.gamemode-card h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #f5f6ff;
+}
+
+.gamemode-card p {
+    margin: 0;
+    color: #c9c2ff;
+    font-size: 0.88rem;
+}
+
+.gamemode-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.gamemode-worldwide {
+    background: linear-gradient(135deg, rgba(43, 180, 163, 0.25), rgba(29, 110, 150, 0.18));
+    border-color: rgba(143, 230, 220, 0.4);
+}
+
+.gamemode-multiplayer {
+    background: linear-gradient(135deg, rgba(143, 80, 255, 0.22), rgba(92, 141, 255, 0.18));
+    border-color: rgba(192, 168, 255, 0.4);
+}
+
+.gamemode-streak {
+    background: linear-gradient(135deg, rgba(255, 134, 102, 0.22), rgba(214, 84, 124, 0.18));
+    border-color: rgba(255, 184, 168, 0.4);
+}
+
+.gamemode-daily {
+    background: linear-gradient(135deg, rgba(255, 209, 102, 0.18), rgba(245, 138, 80, 0.15));
+    border-color: rgba(255, 218, 130, 0.4);
+}
+
+@media (max-width: 1080px) {
+    .gamemodes-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .gamemodes-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .map-card-empty {
     background: rgba(255, 255, 255, 0.06);
     border: 1px dashed rgba(201, 194, 255, 0.35);

@@ -5,13 +5,14 @@ const gameHandler = require("../gameHandler");
 const db = require("../database");
 const { insertMapPositionWithFallbacks } = require("./mapRoutes");
 const { generateDynamicPositions } = require("../streetviewDynamic");
+const countryStreakHandler = require("../countryStreakHandler");
 
 async function createDynamicMap(userId) {
     const positions = await generateDynamicPositions(5);
 
     const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
-    const name = `Dynamic — ${createdAt}`;
-    const description = "Auto-generated random Street View locations.";
+    const name = `Worldwide — ${createdAt}`;
+    const description = "Auto-generated random Street View locations from around the world.";
 
     let inserted;
     try {
@@ -386,6 +387,44 @@ router.post("/heartbeat", middleware, (req, res) => {
         }
 
         return res.status(400).json({ error: error.message });
+    }
+});
+
+router.post("/country-streak/start", middleware, async (req, res) => {
+    try {
+        const game = await countryStreakHandler.startCountryStreakGame(req.user.id);
+        return res.status(201).json(countryStreakHandler.publicView(game));
+    } catch (error) {
+        console.error("[gameRoutes] country streak start failed", error?.message);
+        return res.status(503).json({ error: error?.message || "Failed to start country streak" });
+    }
+});
+
+router.post("/country-streak/guess", middleware, async (req, res) => {
+    const { game_id, country_code } = req.body || {};
+    if (!game_id || !country_code) {
+        return res.status(400).json({ error: "game_id and country_code are required" });
+    }
+    try {
+        const result = await countryStreakHandler.submitCountryGuess(
+            game_id,
+            req.user.id,
+            country_code
+        );
+        return res.json(result);
+    } catch (error) {
+        const status = error?.statusCode || 500;
+        return res.status(status).json({ error: error?.message || "Failed to submit guess" });
+    }
+});
+
+router.get("/country-streak/:gameId", middleware, (req, res) => {
+    try {
+        const info = countryStreakHandler.getGameInfo(req.params.gameId, req.user.id);
+        return res.json(info);
+    } catch (error) {
+        const status = error?.statusCode || 500;
+        return res.status(status).json({ error: error?.message || "Failed to load game" });
     }
 });
 
