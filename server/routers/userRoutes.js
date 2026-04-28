@@ -57,15 +57,11 @@ function parseSide(raw) {
 
 const BANNED_USERNAME_TERMS = [
     "nigger", "nigga", "n1gger", "n1gga",
-    "faggot", "fag", "f4ggot",
-    "retard", "ret4rd",
-    "tranny", "tr4nny",
-    "wetback",
-    "coon", "goon",
-    "paki", "killyourself",
+    "faggot", "f4ggot",
+    "retard", "ret4rd", "killyourself",
     "hitler", "heilhitler",
     "nazi", "naz1",
-    "pedo", "pedophile",
+    "pedo", "pedophile", "p3do", "p3dophile",
     "rape", "rapist",
 ];
 
@@ -96,6 +92,11 @@ router.post("/register", async (req, res) => {
         return res.status(400).json({ error: "Email, username, and password must be strings" });
     }
 
+    const devMode = process.env.DEV_MODE === "true";
+    if (devMode) {
+        return res.status(403).json({ error: "Under development due to ongoing updates. Check back later!" });
+    }
+
     const trimmedUsername = username.trim();
     if (trimmedUsername.length < 2 || trimmedUsername.length > 24) {
         return res.status(400).json({ error: "Username must be between 2 and 24 characters" });
@@ -106,18 +107,27 @@ router.post("/register", async (req, res) => {
     if (containsBannedTerm(trimmedUsername)) {
         return res.status(400).json({ error: "Please choose a different username" });
     }
+    if(containsBannedTerm(email)) {
+        return res.status(400).json({ error: "Email contains banned content" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email" });
+    }
 
     if(password.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters long" });
     }
 
-    const existingUser = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    const existingUser = await db.query("SELECT id, username FROM users WHERE email = ? OR username = ?", [email, trimmedUsername]);
     if (existingUser.length > 0) {
-        return res.status(400).json({ error: "Email is already registered" });
+        return res.status(400).json({ error: "Email or username is already registered" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.query("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", [email, username, hashedPassword]);
+    const result = await db.query("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", [email, trimmedUsername, hashedPassword]);
     if(result.affectedRows === 0) {
         return res.status(500).json({ error: "Failed to create user" });
     }
@@ -149,6 +159,13 @@ router.post("/login", async (req, res) => {
     if (Number(user[0].is_restricted) === 1) {
         return res.status(403).json({
             error: "Your account is restricted, please contact hinoob@byenoob.com regarding this",
+        });
+    }
+
+    const devMode = process.env.DEV_MODE === "true";
+    if (devMode && user[0].role !== "admin") {
+        return res.status(403).json({
+            error: "Under development due to ongoing updates. Check back later!",
         });
     }
 

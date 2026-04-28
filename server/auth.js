@@ -41,6 +41,11 @@ const middleware = (req, res, next) => {
         return res.status(401).json({ error: "Invalid or expired token" });
     }
 
+    const devMode = process.env.DEV_MODE === "true";
+    if (devMode && decoded.role !== "admin") {
+        return res.status(403).json({ error: "Under development due to ongoing updates. Check back later!" });
+    }
+
     req.user = decoded;
     next();
 }
@@ -75,6 +80,11 @@ const userOrGuestMiddleware = (req, res, next) => {
     const decoded = verifyToken(token);
     if (!decoded) {
         return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    const devMode = process.env.DEV_MODE === "true";
+    if (devMode && !decoded.is_guest && decoded.role !== "admin") {
+        return res.status(403).json({ error: "Under development due to ongoing updates. Check back later!" });
     }
 
     req.user = decoded;
