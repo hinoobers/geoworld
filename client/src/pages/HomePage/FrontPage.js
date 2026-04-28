@@ -27,12 +27,6 @@ const FrontPage = () => {
     const [myMapsPage, setMyMapsPage] = useState(1);
     const MY_MAPS_PER_PAGE = 5;
 
-    if(true) {
-        return (<div className="page">
-            Under development due to ongoing updates. Check back later!
-        </div>);
-    }
-
     useEffect(() => {
         let isCancelled = false;
 
@@ -151,6 +145,12 @@ const FrontPage = () => {
             isCancelled = true;
         };
     }, [token, user?.id]);
+
+    if(true) {
+        return (<div className="page">
+            Under development due to ongoing updates. Check back later!
+        </div>);
+    }
 
     const handleDailyButton = async () => {
         if (!token || dailyLoading) return;
