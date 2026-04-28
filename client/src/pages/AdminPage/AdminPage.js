@@ -17,6 +17,8 @@ const AdminPage = () => {
     const [actionError, setActionError] = useState("");
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [showDynamicMaps, setShowDynamicMaps] = useState(false);
+    const [devMode, setDevMode] = useState(null);
 
     const authedFetch = useCallback(
         (path, options = {}) =>
@@ -35,10 +37,11 @@ const AdminPage = () => {
         setLoading(true);
         setError("");
         try {
-            const [oRes, uRes, mRes] = await Promise.all([
+            const [oRes, uRes, mRes, dRes] = await Promise.all([
                 authedFetch("/overview"),
                 authedFetch("/users"),
                 authedFetch("/maps"),
+                authedFetch("/dev-mode"),
             ]);
             if (!oRes.ok || !uRes.ok || !mRes.ok) {
                 throw new Error("Failed to load admin data");
@@ -46,12 +49,31 @@ const AdminPage = () => {
             setOverview(await oRes.json());
             setUsers(await uRes.json());
             setMaps(await mRes.json());
+            if (dRes.ok) {
+                const body = await dRes.json();
+                setDevMode(Boolean(body?.dev_mode));
+            }
         } catch (err) {
             setError(err.message || "Failed to load");
         } finally {
             setLoading(false);
         }
     }, [authedFetch]);
+
+    const handleToggleDevMode = async (next) => {
+        setActionError("");
+        const prev = devMode;
+        setDevMode(next);
+        const res = await authedFetch("/dev-mode", {
+            method: "POST",
+            body: JSON.stringify({ enabled: next }),
+        });
+        if (!res.ok) {
+            setDevMode(prev);
+            const body = await res.json().catch(() => null);
+            setActionError(body?.error || "Failed to toggle dev mode");
+        }
+    };
 
     useEffect(() => {
         if (isLoggedIn && isAdmin) loadAll();
@@ -269,7 +291,26 @@ const AdminPage = () => {
                         </section>
 
                         <section className="admin-section">
-                            <h2>Maps ({maps.length})</h2>
+                            <div className="admin-section-head">
+                                <h2>Maps ({maps.filter((m) => showDynamicMaps || !m.is_dynamic).length}{showDynamicMaps ? "" : ` of ${maps.length}`})</h2>
+                                <label className="admin-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={showDynamicMaps}
+                                        onChange={(e) => setShowDynamicMaps(e.target.checked)}
+                                    />
+                                    Show dynamic maps
+                                </label>
+                                <label className="admin-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(devMode)}
+                                        disabled={devMode === null}
+                                        onChange={(e) => handleToggleDevMode(e.target.checked)}
+                                    />
+                                    Dev mode {devMode === null ? "(loading…)" : devMode ? "ON" : "OFF"}
+                                </label>
+                            </div>
                             <div className="admin-table-wrap">
                                 <table className="admin-table">
                                     <thead>
@@ -284,7 +325,7 @@ const AdminPage = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {maps.map((m) => (
+                                        {maps.filter((m) => showDynamicMaps || !m.is_dynamic).map((m) => (
                                             <tr key={m.id}>
                                                 <td>{m.id}</td>
                                                 <td>{m.name}</td>

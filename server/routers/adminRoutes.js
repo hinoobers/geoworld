@@ -117,14 +117,27 @@ router.delete("/users/:id", async (req, res) => {
 
 router.get("/maps", async (req, res) => {
     try {
-        const rows = await db.query(
-            `SELECT m.id, m.name, m.description, m.is_daily, m.is_public, m.is_forced_popular,
-                    m.created_by, u.username AS creator_username
-             FROM maps m
-             LEFT JOIN users u ON u.id = m.created_by
-             ORDER BY m.id DESC
-             LIMIT 500`
-        );
+        let rows;
+        try {
+            rows = await db.query(
+                `SELECT m.id, m.name, m.description, m.is_daily, m.is_public, m.is_forced_popular,
+                        m.is_dynamic, m.created_by, u.username AS creator_username
+                 FROM maps m
+                 LEFT JOIN users u ON u.id = m.created_by
+                 ORDER BY m.id DESC
+                 LIMIT 500`
+            );
+        } catch {
+            rows = await db.query(
+                `SELECT m.id, m.name, m.description, m.is_daily, m.is_public, m.is_forced_popular,
+                        m.created_by, u.username AS creator_username
+                 FROM maps m
+                 LEFT JOIN users u ON u.id = m.created_by
+                 ORDER BY m.id DESC
+                 LIMIT 500`
+            );
+            rows = rows.map((r) => ({ ...r, is_dynamic: 0 }));
+        }
         res.json(rows);
     } catch (error) {
         console.error("[admin] list maps failed", error?.message);
@@ -189,6 +202,20 @@ router.delete("/maps/:id", async (req, res) => {
         console.error("[admin] delete map failed", error?.message);
         res.status(500).json({ error: "Failed to delete map" });
     }
+});
+
+router.get("/dev-mode", (req, res) => {
+    res.json({ dev_mode: process.env.DEV_MODE === "true" });
+});
+
+router.post("/dev-mode", (req, res) => {
+    const { enabled } = req.body || {};
+    if (typeof enabled !== "boolean") {
+        return res.status(400).json({ error: "enabled (boolean) required" });
+    }
+    process.env.DEV_MODE = enabled ? "true" : "false";
+    console.log(`[admin] DEV_MODE set to ${process.env.DEV_MODE} by user ${req.user?.id}`);
+    res.json({ dev_mode: process.env.DEV_MODE === "true" });
 });
 
 module.exports = router;

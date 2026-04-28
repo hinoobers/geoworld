@@ -165,3 +165,113 @@
         grid-template-columns: 1fr;
     }
 }
+
+.games-card-clickable {
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.games-card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+}
+
+.games-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(2, 8, 14, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.games-modal {
+    width: min(640px, 100%);
+    max-height: 86vh;
+    overflow-y: auto;
+    background: rgba(16, 16, 31, 0.96);
+    border: 1px solid rgba(164, 140, 255, 0.32);
+    border-radius: 16px;
+    padding: 22px;
+    color: #f5f6ff;
+    position: relative;
+}
+.games-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #f5f6ff;
+    font-size: 1.6rem;
+    cursor: pointer;
+    line-height: 1;
+}
+.games-modal h2 {
+    margin: 0 0 6px;
+}
+.games-modal-meta {
+    margin: 0 0 14px;
+    color: #c9c2ff;
+    font-size: 0.92rem;
+}
+
+.games-positions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.games-position {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(8, 18, 30, 0.6);
+    border: 1px solid rgba(141, 180, 216, 0.22);
+}
+.games-position-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+.games-position-index {
+    color: #c9a4ff;
+    font-weight: 800;
+    min-width: 28px;
+}
+.games-position-note {
+    margin: 0;
+    color: #f5f6ff;
+    font-weight: 600;
+}
+.games-position-coords {
+    margin: 2px 0 0;
+    color: #aab8c8;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+.games-position-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.games-position-link {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #2a9d8f 0%, #3a86ff 100%);
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.games-position-link-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(201, 194, 255, 0.3);
+}

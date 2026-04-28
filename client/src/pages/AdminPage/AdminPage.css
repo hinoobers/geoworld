@@ -273,3 +273,16 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.admin-section-head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.admin-section-head h2 {
+    margin: 0;
+    margin-right: auto;
+}

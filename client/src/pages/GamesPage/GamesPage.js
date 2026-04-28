@@ -16,6 +16,30 @@ const GamesPage = () => {
     const [modeFilter, setModeFilter] = useState("all");
     const [resultFilter, setResultFilter] = useState("all");
     const [sortOrder, setSortOrder] = useState("newest");
+    const [openGame, setOpenGame] = useState(null);
+    const [openPositions, setOpenPositions] = useState([]);
+    const [openLoading, setOpenLoading] = useState(false);
+    const [openError, setOpenError] = useState("");
+
+    const openGameDetails = async (game) => {
+        setOpenGame(game);
+        setOpenPositions([]);
+        setOpenError("");
+        if (!game?.map_id) return;
+        try {
+            setOpenLoading(true);
+            const res = await fetch(`${API_BASE_URL}/maps/pos/${game.map_id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const body = await res.json().catch(() => []);
+            if (!res.ok) throw new Error(body?.error || "Failed to load locations");
+            setOpenPositions(Array.isArray(body) ? body : []);
+        } catch (err) {
+            setOpenError(err.message || "Failed to load locations");
+        } finally {
+            setOpenLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -166,41 +190,141 @@ const GamesPage = () => {
 
                 {!loading && !error && visibleGames.length > 0 ? (
                     <section className="games-list">
-                        {visibleGames.map((game) => (
-                            <article className="games-card" key={`game-${game.game_id}`}>
-                                <div className="games-card-head">
-                                    <h3>{game.map_name || `Map #${game.map_id}`}</h3>
-                                    {game.mode === "singleplayer" ? (() => {
-                                        const badge = singleplayerBadge(game);
-                                        return (
-                                            <span className={`games-result ${badge.className}`}>
-                                                {badge.label}
+                        {visibleGames.map((game) => {
+                            const isStreak = game.mode === "country_streak";
+                            return (
+                                <article
+                                    className="games-card games-card-clickable"
+                                    key={`game-${game.game_id}`}
+                                    onClick={() => openGameDetails(game)}
+                                >
+                                    <div className="games-card-head">
+                                        <h3>{isStreak ? "🏳️ Country Streak" : (game.map_name || `Map #${game.map_id}`)}</h3>
+                                        {isStreak ? (
+                                            <span className="games-result games-result-score games-result-score-good">
+                                                Streak {Number(game.score) || 0}
                                             </span>
-                                        );
-                                    })() : (
-                                        <span className={`games-result games-result-${String(game.result || "unknown")}`}>
-                                            {renderResultLabel(game)}
-                                        </span>
-                                    )}
-                                </div>
+                                        ) : game.mode === "singleplayer" ? (() => {
+                                            const badge = singleplayerBadge(game);
+                                            return (
+                                                <span className={`games-result ${badge.className}`}>
+                                                    {badge.label}
+                                                </span>
+                                            );
+                                        })() : (
+                                            <span className={`games-result games-result-${String(game.result || "unknown")}`}>
+                                                {renderResultLabel(game)}
+                                            </span>
+                                        )}
+                                    </div>
 
-                                <p className="games-meta-line">
-                                    {game.mode} · {game.status === "abandoned" ? "Not finished" : game.status}
-                                </p>
+                                    <p className="games-meta-line">
+                                        {game.mode} · {game.status === "abandoned" ? "Not finished" : game.status}
+                                    </p>
 
-                                <div className="games-stats-grid">
-                                    <p><strong>Score:</strong> {Number(game.score || 0).toLocaleString()}</p>
-                                    <p><strong>Rounds:</strong> {Number(game.total_rounds || 0)}</p>
-                                    {game.mode === "multiplayer" && game.opponent_name ? (
-                                        <p><strong>Opponent:</strong> {game.opponent_name}</p>
-                                    ) : null}
-                                    <p><strong>Played:</strong> {game.created_at ? new Date(game.created_at).toLocaleString() : "-"}</p>
-                                </div>
-                            </article>
-                        ))}
+                                    <div className="games-stats-grid">
+                                        {isStreak ? (
+                                            <p><strong>Streak:</strong> {Number(game.score) || 0}</p>
+                                        ) : (
+                                            <p><strong>Score:</strong> {Number(game.score || 0).toLocaleString()}</p>
+                                        )}
+                                        <p><strong>Rounds:</strong> {Number(game.total_rounds || 0)}</p>
+                                        {game.mode === "multiplayer" && game.opponent_name ? (
+                                            <p><strong>Opponent:</strong> {game.opponent_name}</p>
+                                        ) : null}
+                                        <p><strong>Played:</strong> {game.created_at ? new Date(game.created_at).toLocaleString() : "-"}</p>
+                                    </div>
+                                </article>
+                            );
+                        })}
                     </section>
                 ) : null}
+
+                {openGame ? (
+                    <GameDetailsModal
+                        game={openGame}
+                        positions={openPositions}
+                        loading={openLoading}
+                        error={openError}
+                        onClose={() => setOpenGame(null)}
+                    />
+                ) : null}
             </main>
+        </div>
+    );
+};
+
+const GameDetailsModal = ({ game, positions, loading, error, onClose }) => {
+    const isStreak = game.mode === "country_streak";
+    const streetViewUrl = (lat, lng, panoId) => {
+        if (panoId) {
+            return `https://www.google.com/maps/@?api=1&map_action=pano&pano=${encodeURIComponent(panoId)}`;
+        }
+        return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+    };
+    const mapsUrl = (lat, lng) =>
+        `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+    return (
+        <div className="games-modal-backdrop" onClick={onClose}>
+            <div className="games-modal" onClick={(e) => e.stopPropagation()}>
+                <button type="button" className="games-modal-close" onClick={onClose} aria-label="Close">×</button>
+                <h2>{isStreak ? "🏳️ Country Streak" : (game.map_name || `Map #${game.map_id}`)}</h2>
+                <p className="games-modal-meta">
+                    {isStreak
+                        ? <>Streak <strong>{Number(game.score) || 0}</strong> · {game.total_rounds} round{game.total_rounds === 1 ? "" : "s"}</>
+                        : <>Score <strong>{Number(game.score || 0).toLocaleString()}</strong> · {game.total_rounds} round{game.total_rounds === 1 ? "" : "s"}</>}
+                    {" · "}{game.created_at ? new Date(game.created_at).toLocaleString() : ""}
+                </p>
+
+                {loading ? <p className="games-empty">Loading locations…</p> : null}
+                {error ? <p className="games-error">{error}</p> : null}
+
+                {!loading && !error && positions.length === 0 ? (
+                    <p className="games-empty">No locations recorded.</p>
+                ) : null}
+
+                {!loading && positions.length > 0 ? (
+                    <ul className="games-positions">
+                        {positions.map((p, i) => {
+                            const lat = Number(p.lat ?? p.latitude);
+                            const lng = Number(p.lng ?? p.longitude);
+                            const panoId = p.panorama_id || p.pano_id || null;
+                            return (
+                                <li key={p.map_position_id || i} className="games-position">
+                                    <div className="games-position-info">
+                                        <span className="games-position-index">#{i + 1}</span>
+                                        <div>
+                                            <p className="games-position-note">{p.note || "—"}</p>
+                                            <p className="games-position-coords">
+                                                {Number.isFinite(lat) ? lat.toFixed(4) : "?"}, {Number.isFinite(lng) ? lng.toFixed(4) : "?"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="games-position-actions">
+                                        <a
+                                            href={streetViewUrl(lat, lng, panoId)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="games-position-link"
+                                        >
+                                            Street View
+                                        </a>
+                                        <a
+                                            href={mapsUrl(lat, lng)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="games-position-link games-position-link-secondary"
+                                        >
+                                            Map
+                                        </a>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                ) : null}
+            </div>
         </div>
     );
 };

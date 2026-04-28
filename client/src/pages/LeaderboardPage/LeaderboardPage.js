@@ -64,7 +64,7 @@ const LeaderboardPage = () => {
                             key={t.id}
                             type="button"
                             className={`lb-tab ${tab === t.id ? "is-active" : ""}`}
-                            onClick={() => setTab(t.id)}
+                            onClick={() => { setEntries([]); setTab(t.id); }}
                         >
                             {t.label}
                         </button>
@@ -99,7 +99,11 @@ const LeaderboardPage = () => {
                                 )}
                             </thead>
                             <tbody>
-                                {entries.map((entry, i) => (
+                                {entries
+                                    .filter((entry) => isStreak
+                                        ? entry.best_streak !== undefined
+                                        : entry.rating !== undefined)
+                                    .map((entry, i) => (
                                     <tr
                                         key={entry.user_id}
                                         className={Number(entry.user_id) === Number(user?.id) ? "lb-me" : ""}
@@ -110,8 +114,8 @@ const LeaderboardPage = () => {
                                             <td>{entry.best_streak}</td>
                                         ) : (
                                             <>
-                                                <td>{entry.rating.toFixed(1)}%</td>
-                                                <td>{entry.accuracy.toFixed(1)}%</td>
+                                                <td>{Number(entry.rating || 0).toFixed(1)}%</td>
+                                                <td>{Number(entry.accuracy || 0).toFixed(1)}%</td>
                                                 <td>{entry.games_played}</td>
                                             </>
                                         )}

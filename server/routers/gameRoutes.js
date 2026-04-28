@@ -402,7 +402,7 @@ router.get("/country-streak/best", middleware, async (req, res) => {
         let best = 0;
         for (const row of rows) {
             const side = parseSide(row.one_side);
-            if (!side || side.status !== "completed") continue;
+            if (!side) continue;
             const score = Number(side.score) || 0;
             if (score > best) best = score;
         }
@@ -421,7 +421,7 @@ router.get("/country-streak/leaderboard", middleware, async (req, res) => {
         const bestByUser = new Map();
         for (const row of rows) {
             const side = parseSide(row.one_side);
-            if (!side || side.status !== "completed") continue;
+            if (!side) continue;
             const uid = Number(side.side);
             if (!uid) continue;
             const score = Number(side.score) || 0;
