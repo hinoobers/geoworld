@@ -19,6 +19,8 @@ const Settings = () => {
     const navigate = useNavigate();
     const pfpInputRef = useRef(null);
 
+    const isOAuthAccount = user?.account_type === "discord" || user?.account_type === "google";
+
     const [username, setUsername] = useState(user?.username || "");
     const [usernameMessage, setUsernameMessage] = useState(null);
     const [usernameSubmitting, setUsernameSubmitting] = useState(false);
@@ -344,6 +346,13 @@ const Settings = () => {
                         <div className="settings-card-head">
                             <h3>Password</h3>
                         </div>
+                        {isOAuthAccount && (
+                            <div className="settings-card-oauth-overlay">
+                                <span className="settings-oauth-message">
+                                    Password changes are not available for {user?.account_type} accounts.
+                                </span>
+                            </div>
+                        )}
                         <p className="settings-card-hint">
                             You'll be logged out after a successful change.
                         </p>
@@ -356,6 +365,7 @@ const Settings = () => {
                             value={currentPassword}
                             onChange={(event) => setCurrentPassword(event.target.value)}
                             autoComplete="current-password"
+                            disabled={isOAuthAccount}
                         />
 
                         <label htmlFor="new-password">New password</label>
@@ -366,6 +376,7 @@ const Settings = () => {
                             value={newPassword}
                             onChange={(event) => setNewPassword(event.target.value)}
                             autoComplete="new-password"
+                            disabled={isOAuthAccount}
                         />
 
                         {passwordMessage ? (
@@ -377,7 +388,7 @@ const Settings = () => {
                         <button
                             type="submit"
                             className="settings-primary"
-                            disabled={passwordSubmitting}
+                            disabled={passwordSubmitting || isOAuthAccount}
                         >
                             {passwordSubmitting ? "Saving..." : "Change password"}
                         </button>

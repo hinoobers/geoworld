@@ -48,6 +48,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    position: relative;
 }
 
 .settings-card-head {
@@ -202,4 +203,30 @@
         padding-left: 14px;
         padding-right: 14px;
     }
+}
+
+.settings-card-oauth-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    z-index: 10;
+}
+
+.settings-oauth-message {
+    background: rgba(100, 100, 100, 0.9);
+    color: #e0e0e0;
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    text-align: center;
+    max-width: 80%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
