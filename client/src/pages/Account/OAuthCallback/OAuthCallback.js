@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -6,8 +6,12 @@ const OAuthCallback = () => {
     const navigate = useNavigate();
     const [params] = useSearchParams();
     const { setToken } = useAuth();
+    const processedRef = useRef(false);
 
     useEffect(() => {
+        if (processedRef.current) return;
+        processedRef.current = true;
+
         const token = params.get("token");
         if (!token) {
             navigate("/login?message=" + encodeURIComponent("OAuth login failed"), { replace: true });
