@@ -306,13 +306,7 @@ const PlayPage = () => {
             document.removeEventListener("visibilitychange", onVisibilityChange);
         };
     }, [game?.game_id, token]);
-
-    if(true) {
-        return (<div className="page">
-            Under development due to ongoing updates. Check back later!
-        </div>);
-    }
-
+    
     const handleStartGame = async () => {
         if (!selectedMapId) {
             setError("Select a map first");

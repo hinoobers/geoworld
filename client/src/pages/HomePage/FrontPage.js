@@ -146,12 +146,6 @@ const FrontPage = () => {
         };
     }, [token, user?.id]);
 
-    if(true) {
-        return (<div className="page">
-            Under development due to ongoing updates. Check back later!
-        </div>);
-    }
-
     const handleDailyButton = async () => {
         if (!token || dailyLoading) return;
 
