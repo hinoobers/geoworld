@@ -8,6 +8,8 @@ const generateToken = (user, expiresIn = "7d") => {
         username: user.username,
         email: user.email,
         role: user.role || "user",
+        verified: user.verified === 1 || user.verified === true || user.verified === "1",
+        account_type: user.account_type || "internal",
     };
     return jsonwebtoken.sign(payload, JWT_SECRET, { expiresIn });
 }
@@ -19,6 +21,14 @@ const generateGuestToken = (guest) => {
         is_guest: true,
     };
     return jsonwebtoken.sign(payload, JWT_SECRET, { expiresIn: "1d" });
+}
+
+const generateEmailVerifyToken = (user) => {
+    return jsonwebtoken.sign(
+        { uid: user.id, kind: "verify_email" },
+        JWT_SECRET,
+        { expiresIn: "1d" }
+    );
 }
 
 const verifyToken = (token) => {
@@ -48,6 +58,16 @@ const middleware = (req, res, next) => {
 
     req.user = decoded;
     next();
+}
+
+const requireVerified = (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    if (req.user.role === "admin") return next();
+    if (req.user.verified) return next();
+    return res.status(403).json({
+        error: "Please verify your email to play.",
+        code: "EMAIL_NOT_VERIFIED",
+    });
 }
 
 const adminMiddleware = (req, res, next) => {
@@ -94,8 +114,10 @@ const userOrGuestMiddleware = (req, res, next) => {
 module.exports = {
     generateToken,
     generateGuestToken,
+    generateEmailVerifyToken,
     verifyToken,
     middleware,
+    requireVerified,
     adminMiddleware,
     userOrGuestMiddleware,
 }

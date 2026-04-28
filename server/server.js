@@ -52,6 +52,7 @@ app.use("/api/maps", require("./routers/mapRoutes"));
 app.use("/api/games", require("./routers/gameRoutes"));
 app.use("/api/lobbies", require("./routers/lobbyRoutes"));
 app.use("/api/admin", require("./routers/adminRoutes"));
+app.use("/api/auth", require("./routers/authOauthRoutes"));
 
 app.get("/api/docs/openapi.json", (req, res) => res.json(openApiSpec));
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, {

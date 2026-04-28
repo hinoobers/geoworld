@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const middleware = require("../auth").middleware;
+const { requireVerified } = require("../auth");
 const gameHandler = require("../gameHandler");
 const db = require("../database");
 const { insertMapPositionWithFallbacks } = require("./mapRoutes");
@@ -237,7 +238,7 @@ router.get("/gameinfo", middleware, (req, res) => {
     }
 });
 
-router.post("/create-game", middleware, async (req, res) => {
+router.post("/create-game", middleware, requireVerified, async (req, res) => {
     const { map_id, mode, round_count, allow_move, allow_zoom, allow_look, dynamic } = req.body;
     // mode can be "singleplayer" or "multiplayer", in multiplayer, a lobby is created instead, start-game is not needed, if multiplayer, then start-game needs to be called
 
@@ -321,7 +322,7 @@ router.post("/create-game", middleware, async (req, res) => {
     }
 });
 
-router.post("/start-game", middleware, (req, res) => {
+router.post("/start-game", middleware, requireVerified, (req, res) => {
     const { game_id } = req.body;
     if (!game_id) {
         return res.status(400).json({ error: "game_id is required" });
@@ -354,7 +355,7 @@ router.post("/start-game", middleware, (req, res) => {
 
 });
 
-router.post("/guess", middleware, async (req, res) => {
+router.post("/guess", middleware, requireVerified, async (req, res) => {
     const { game_id, guess } = req.body;
     if (!game_id || !guess) {
         return res.status(400).json({ error: "game_id and guess are required" });
@@ -456,7 +457,7 @@ router.get("/country-streak/leaderboard", middleware, async (req, res) => {
     }
 });
 
-router.post("/country-streak/start", middleware, async (req, res) => {
+router.post("/country-streak/start", middleware, requireVerified, async (req, res) => {
     try {
         const game = await countryStreakHandler.startCountryStreakGame(req.user.id);
         return res.status(201).json(countryStreakHandler.publicView(game));
@@ -466,7 +467,7 @@ router.post("/country-streak/start", middleware, async (req, res) => {
     }
 });
 
-router.post("/country-streak/register-round", middleware, async (req, res) => {
+router.post("/country-streak/register-round", middleware, requireVerified, async (req, res) => {
     const { game_id, candidate } = req.body || {};
     if (!game_id || !candidate) {
         return res.status(400).json({ error: "game_id and candidate are required" });
@@ -484,7 +485,7 @@ router.post("/country-streak/register-round", middleware, async (req, res) => {
     }
 });
 
-router.post("/country-streak/guess", middleware, async (req, res) => {
+router.post("/country-streak/guess", middleware, requireVerified, async (req, res) => {
     const { game_id, country_code } = req.body || {};
     if (!game_id || !country_code) {
         return res.status(400).json({ error: "game_id and country_code are required" });

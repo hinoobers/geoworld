@@ -5,7 +5,20 @@ const fs = require("fs/promises");
 const { randomUUID } = require("crypto");
 const db = require("../database");
 const bcrypt = require("bcrypt");
-const { generateToken, middleware, verifyToken } = require("../auth");
+const { generateToken, middleware, verifyToken, generateEmailVerifyToken } = require("../auth");
+
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://geoworld.byenoob.com";
+
+async function sendVerificationEmail(user) {
+    const token = generateEmailVerifyToken(user);
+    const link = `${FRONTEND_URL}/verified?token=${encodeURIComponent(token)}`;
+    const text = `Hi ${user.username},\n\nWelcome to GeoWorld! Please verify your email to start playing:\n\n${link}\n\nThis link expires in 24 hours. If you didn't create this account, ignore this email.`;
+    try {
+        await sendMail(user.email, "Verify your GeoWorld email", text);
+    } catch (err) {
+        console.error("[userRoutes] failed to send verification email", err?.message);
+    }
+}
 const {sendMail} = require("../mailer");
 
 const PFP_DIR = path.join(__dirname, "..", "uploads", "pfps");
@@ -127,12 +140,61 @@ router.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.query("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", [email, trimmedUsername, hashedPassword]);
+    const result = await db.query(
+        "INSERT INTO users (email, username, password, account_type, verified) VALUES (?, ?, ?, 'internal', 0)",
+        [email, trimmedUsername, hashedPassword]
+    );
     if(result.affectedRows === 0) {
         return res.status(500).json({ error: "Failed to create user" });
     }
 
+    sendVerificationEmail({ id: result.insertId, username: trimmedUsername, email });
+
     res.status(201).json({ id: result.insertId });
+});
+
+router.post("/verify-email", async (req, res) => {
+    const { token } = req.body || {};
+    if (!token) return res.status(400).json({ error: "token required" });
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.kind !== "verify_email" || !decoded.uid) {
+        return res.status(400).json({ error: "Invalid or expired verification link" });
+    }
+    try {
+        await db.query("UPDATE users SET verified = 1 WHERE id = ?", [decoded.uid]);
+        const rows = await db.query(
+            "SELECT id, username, email, role, verified, account_type FROM users WHERE id = ?",
+            [decoded.uid]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: "User not found" });
+        const fresh = generateToken(rows[0]);
+        return res.json({ token: fresh, verified: true });
+    } catch (err) {
+        console.error("[userRoutes] verify-email failed", err?.message);
+        return res.status(500).json({ error: "Failed to verify" });
+    }
+});
+
+router.post("/resend-verification", middleware, async (req, res) => {
+    try {
+        const rows = await db.query(
+            "SELECT id, username, email, verified, account_type FROM users WHERE id = ?",
+            [req.user.id]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: "User not found" });
+        const u = rows[0];
+        if (u.account_type !== "internal") {
+            return res.status(400).json({ error: "OAuth accounts are already verified" });
+        }
+        if (Number(u.verified) === 1) {
+            return res.json({ ok: true, already_verified: true });
+        }
+        await sendVerificationEmail(u);
+        return res.json({ ok: true });
+    } catch (err) {
+        console.error("[userRoutes] resend-verification failed", err?.message);
+        return res.status(500).json({ error: "Failed to resend" });
+    }
 });
 
 router.post("/login", async (req, res) => {
@@ -145,10 +207,18 @@ router.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Email and password must be strings" });
     }
 
-    const user = await db.query("SELECT id, username, email, password, role, is_restricted FROM users WHERE email = ?", [email]);
+    const user = await db.query(
+        "SELECT id, username, email, password, role, is_restricted, verified, account_type FROM users WHERE email = ?",
+        [email]
+    );
     if (user.length === 0) {
         // we don't want to reveal whether account exists, so use same error message for both cases
         return res.status(400).json({ error: "Invalid email or password" });
+    }
+    if (user[0].account_type && user[0].account_type !== "internal") {
+        return res.status(400).json({
+            error: `This account uses ${user[0].account_type} sign-in. Use the ${user[0].account_type} button to log in.`,
+        });
     }
 
     const isMatch = await bcrypt.compare(password, user[0].password);

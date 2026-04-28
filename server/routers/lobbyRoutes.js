@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { randomUUID } = require("crypto");
-const { middleware, userOrGuestMiddleware, generateGuestToken } = require("../auth");
+const { middleware, userOrGuestMiddleware, generateGuestToken, requireVerified } = require("../auth");
 const { query } = require("../database");
 const lobbyHandler = require("../lobbyHandler");
 const multiplayerGameHandler = require("../multiplayerGameHandler");
@@ -26,7 +26,7 @@ router.post("/guest", (req, res) => {
     });
 });
 
-router.post("/", middleware, async (req, res) => {
+router.post("/", middleware, requireVerified, async (req, res) => {
     const { map_id, allow_move, allow_zoom, allow_look, round_time_seconds, round_count } = req.body;
     const mapId = Number(map_id);
     if (!Number.isInteger(mapId) || mapId <= 0) {

@@ -45,6 +45,8 @@ function decodeToken(token) {
             username: decodedPayload.username,
             email: decodedPayload.email,
             role: decodedPayload.role || "user",
+            verified: Boolean(decodedPayload.verified),
+            account_type: decodedPayload.account_type || "internal",
         };
     } catch {
         return null;
@@ -117,14 +119,18 @@ export function AuthProvider({ children }) {
             setAuth(null);
         };
 
+        const setToken = (token) => setAuth(buildAuthState(token));
+
         return {
             token: auth?.token ?? null,
             user: auth?.user ?? null,
             isLoggedIn: Boolean(auth?.token),
             isAdmin: auth?.user?.role === "admin",
+            isVerified: Boolean(auth?.user?.verified),
             login,
             register,
             logout,
+            setToken,
         };
     }, [auth]);
 
