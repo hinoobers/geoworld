@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import Header from "../../components/Header/Header";
 import { useAuth } from "../../context/AuthContext";
@@ -19,6 +19,8 @@ const AdminPage = () => {
     const [deleting, setDeleting] = useState(false);
     const [showDynamicMaps, setShowDynamicMaps] = useState(false);
     const [devMode, setDevMode] = useState(null);
+    const [apiUsage, setApiUsage] = useState([]);
+    const [expandedUsageKey, setExpandedUsageKey] = useState(null);
 
     const authedFetch = useCallback(
         (path, options = {}) =>
@@ -37,11 +39,12 @@ const AdminPage = () => {
         setLoading(true);
         setError("");
         try {
-            const [oRes, uRes, mRes, dRes] = await Promise.all([
+            const [oRes, uRes, mRes, dRes, aRes] = await Promise.all([
                 authedFetch("/overview"),
                 authedFetch("/users"),
                 authedFetch("/maps"),
                 authedFetch("/dev-mode"),
+                authedFetch("/api-usage"),
             ]);
             if (!oRes.ok || !uRes.ok || !mRes.ok) {
                 throw new Error("Failed to load admin data");
@@ -53,12 +56,27 @@ const AdminPage = () => {
                 const body = await dRes.json();
                 setDevMode(Boolean(body?.dev_mode));
             }
+            if (aRes.ok) {
+                const body = await aRes.json();
+                setApiUsage(Array.isArray(body) ? body : []);
+            }
         } catch (err) {
             setError(err.message || "Failed to load");
         } finally {
             setLoading(false);
         }
     }, [authedFetch]);
+
+    const refreshApiUsage = async () => {
+        const res = await authedFetch("/api-usage");
+        if (res.ok) setApiUsage(await res.json());
+    };
+
+    const resetApiUsage = async () => {
+        if (!window.confirm("Reset API usage counters?")) return;
+        const res = await authedFetch("/api-usage/reset", { method: "POST" });
+        if (res.ok) refreshApiUsage();
+    };
 
     const handleToggleDevMode = async (next) => {
         setActionError("");
@@ -285,6 +303,91 @@ const AdminPage = () => {
                                                 </tr>
                                             );
                                         })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section className="admin-section">
+                            <div className="admin-section-head">
+                                <h2>API Usage ({apiUsage.length})</h2>
+                                <button type="button" onClick={refreshApiUsage}>Refresh</button>
+                                <button type="button" className="admin-danger" onClick={resetApiUsage}>Reset counters</button>
+                            </div>
+                            <p className="admin-hint">In-memory counters since the server started. Click a row to expand endpoint breakdown.</p>
+                            <div className="admin-table-wrap">
+                                <table className="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th>Role</th>
+                                            <th>Total calls</th>
+                                            <th>Games played</th>
+                                            <th>Last seen</th>
+                                            <th>Restricted</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {apiUsage.map((row) => {
+                                            const expanded = expandedUsageKey === row.key;
+                                            const u = row.is_guest ? null : users.find((x) => Number(x.id) === Number(row.user_id));
+                                            const restricted = u ? Boolean(u.is_restricted) : Boolean(row.is_restricted);
+                                            return (
+                                                <Fragment key={row.key}>
+                                                    <tr
+                                                        className="admin-row-clickable"
+                                                        onClick={() => setExpandedUsageKey(expanded ? null : row.key)}
+                                                    >
+                                                        <td>
+                                                            {row.username}
+                                                            {row.is_guest ? <span className="admin-role admin-role-user"> guest</span> : null}
+                                                        </td>
+                                                        <td><span className={`admin-role admin-role-${row.role}`}>{row.role}</span></td>
+                                                        <td>{Number(row.total).toLocaleString()}</td>
+                                                        <td>{row.games_played ?? "—"}</td>
+                                                        <td>{row.last_seen ? new Date(row.last_seen).toLocaleString() : "—"}</td>
+                                                        <td>
+                                                            {row.is_guest || !u ? "—" : (
+                                                                <label className="admin-switch" onClick={(e) => e.stopPropagation()}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={restricted}
+                                                                        disabled={u.role === "admin" || Number(u.id) === Number(user?.id)}
+                                                                        onChange={(e) => handleToggleRestricted(u.id, e.target.checked)}
+                                                                    />
+                                                                    {restricted ? "Restricted" : "Active"}
+                                                                </label>
+                                                            )}
+                                                        </td>
+                                                        <td className="admin-actions" onClick={(e) => e.stopPropagation()}>
+                                                            {!row.is_guest && u && Number(u.id) !== Number(user?.id) ? (
+                                                                <button type="button" className="admin-danger" onClick={() => openDeleteUser(u)}>
+                                                                    Delete
+                                                                </button>
+                                                            ) : null}
+                                                        </td>
+                                                    </tr>
+                                                    {expanded ? (
+                                                        <tr className="admin-row-expand">
+                                                            <td colSpan={7}>
+                                                                <ul className="admin-endpoints">
+                                                                    {row.endpoints.map((e) => (
+                                                                        <li key={e.route}>
+                                                                            <code>{e.route}</code>
+                                                                            <span>{Number(e.count).toLocaleString()}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </td>
+                                                        </tr>
+                                                    ) : null}
+                                                </Fragment>
+                                            );
+                                        })}
+                                        {apiUsage.length === 0 ? (
+                                            <tr><td colSpan={7}>No API calls recorded yet.</td></tr>
+                                        ) : null}
                                     </tbody>
                                 </table>
                             </div>

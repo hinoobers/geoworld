@@ -39,6 +39,9 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const apiUsage = require("./apiUsage");
+app.use("/api", apiUsage.middleware);
+
 app.use("/pfps", express.static(PFP_DIR, {
     fallthrough: false,
     maxAge: "7d",

@@ -53,7 +53,7 @@ const LeaderboardPage = () => {
                     <h1>{isStreak ? "Country Streak Leaderboard" : "Global Leaderboard"}</h1>
                     <p>
                         {isStreak
-                            ? "Top country-streak runs. Only completed streaks count — closing the tab mid-game does not."
+                            ? "Top country-streak runs."
                             : "Play and guess accurately to level up your rating and climb the ranks!"}
                     </p>
                 </section>

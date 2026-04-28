@@ -286,3 +286,36 @@
     margin: 0;
     margin-right: auto;
 }
+
+.admin-hint {
+    margin: -4px 0 10px;
+    color: #aab8c8;
+    font-size: 0.86rem;
+}
+.admin-row-clickable { cursor: pointer; }
+.admin-row-clickable:hover { background: rgba(143, 80, 255, 0.06); }
+.admin-row-expand td {
+    background: rgba(8, 18, 30, 0.55);
+}
+.admin-endpoints {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0 4px 8px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 18px;
+    font-size: 0.88rem;
+}
+.admin-endpoints li {
+    display: contents;
+}
+.admin-endpoints code {
+    color: #c9d8ff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.84rem;
+}
+.admin-endpoints span {
+    color: #ffd166;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}

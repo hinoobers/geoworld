@@ -43,6 +43,8 @@ const ANCHOR_CITIES = [
     { lat: 50.0755, lng: 14.4378 },    // Prague
     { lat: 52.2297, lng: 21.0122 },    // Warsaw
     { lat: 47.4979, lng: 19.0402 },    // Budapest
+    { lat: 59.43066843285406, lng: 24.791847810139053 }, // EE: Tallinn
+    { lat: 58.38365708185314, lng: 26.742934931023886 }, // EE: Tartu
 
     // Asia
     { lat: 35.6762, lng: 139.6503 },   // Tokyo
@@ -66,6 +68,9 @@ const ANCHOR_CITIES = [
     // Africa
     { lat: -33.9249, lng: 18.4241 },   // Cape Town
     { lat: -26.2041, lng: 28.0473 },   // Johannesburg
+    { lat: 6.331255446350076, lng: 5.612902767850288 },   // Benin City
+    { lat: 5.5629238182791685, lng: -0.20951642199988713 }, // Accra
+    
 ];
 
 const SEARCH_RADIUS_METERS = 50_000;

@@ -204,6 +204,58 @@ router.delete("/maps/:id", async (req, res) => {
     }
 });
 
+const apiUsage = require("../apiUsage");
+
+router.get("/api-usage", async (req, res) => {
+    try {
+        const rows = apiUsage.snapshot();
+        const userIds = rows
+            .filter((r) => !r.is_guest && r.user_id)
+            .map((r) => Number(r.user_id));
+
+        let usernameById = new Map();
+        let gamesById = new Map();
+        if (userIds.length > 0) {
+            const placeholders = userIds.map(() => "?").join(",");
+            const userRows = await db.query(
+                `SELECT id, username, is_restricted, role FROM users WHERE id IN (${placeholders})`,
+                userIds
+            );
+            usernameById = new Map(userRows.map((u) => [Number(u.id), u]));
+
+            for (const uid of userIds) {
+                const needle = `%"side":"${uid}"%`;
+                const [count] = await db.query(
+                    "SELECT COUNT(*) AS n FROM games WHERE one_side LIKE ? OR second_side LIKE ?",
+                    [needle, needle]
+                );
+                gamesById.set(uid, Number(count?.n) || 0);
+            }
+        }
+
+        const enriched = rows.map((r) => {
+            const u = !r.is_guest && r.user_id ? usernameById.get(Number(r.user_id)) : null;
+            return {
+                ...r,
+                username: u?.username || (r.is_guest ? `Guest ${r.user_id ?? "?"}` : `#${r.user_id ?? "?"}`),
+                role: u?.role || (r.is_guest ? "guest" : "user"),
+                is_restricted: u ? Boolean(u.is_restricted) : false,
+                games_played: r.is_guest ? null : (gamesById.get(Number(r.user_id)) || 0),
+            };
+        });
+
+        res.json(enriched);
+    } catch (error) {
+        console.error("[admin] api-usage failed", error?.message);
+        res.status(500).json({ error: "Failed to load API usage" });
+    }
+});
+
+router.post("/api-usage/reset", (req, res) => {
+    apiUsage.reset();
+    res.json({ ok: true });
+});
+
 router.get("/dev-mode", (req, res) => {
     res.json({ dev_mode: process.env.DEV_MODE === "true" });
 });
