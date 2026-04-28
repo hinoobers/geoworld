@@ -20,6 +20,7 @@ import Settings from './pages/Account/Settings/Settings';
 import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import CountryStreakPage from './pages/CountryStreakPage/CountryStreakPage';
+import OAuthCallback from './pages/Account/OAuthCallback/OAuthCallback';
 
 function App() {
   return (
