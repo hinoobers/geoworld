@@ -175,6 +175,10 @@ router.post("/verify-email", async (req, res) => {
     }
 });
 
+const RESEND_WINDOW_MS = 60 * 60 * 1000;
+const RESEND_MAX_PER_WINDOW = 2;
+const resendHistory = new Map();
+
 router.post("/resend-verification", middleware, async (req, res) => {
     try {
         const rows = await db.query(
@@ -189,6 +193,19 @@ router.post("/resend-verification", middleware, async (req, res) => {
         if (Number(u.verified) === 1) {
             return res.json({ ok: true, already_verified: true });
         }
+
+        const now = Date.now();
+        const recent = (resendHistory.get(u.id) || []).filter((t) => now - t < RESEND_WINDOW_MS);
+        if (recent.length >= RESEND_MAX_PER_WINDOW) {
+            const retryAfterMs = RESEND_WINDOW_MS - (now - recent[0]);
+            res.set("Retry-After", Math.ceil(retryAfterMs / 1000));
+            return res.status(429).json({
+                error: `Too many requests. Try again in ${Math.ceil(retryAfterMs / 60000)} minute(s).`,
+            });
+        }
+        recent.push(now);
+        resendHistory.set(u.id, recent);
+
         await sendVerificationEmail(u);
         return res.json({ ok: true });
     } catch (err) {
