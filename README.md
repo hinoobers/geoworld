@@ -1,8 +1,8 @@
 # 🌍 Geoworld
 
-Ever heard of the popular game called GeoGuessr?
+Ever heard of the popular game GeoGuessr?
 
-It was incredibly fun while it lasted, but unfortunately it eventually moved behind a paywall. That’s what inspired **Geoworld** — a free, open, and customizable alternative where players can still enjoy the core idea of exploring the world and testing their geography skills without restrictions.
+It’s a super fun way to explore the world and test your geography skills. Geoworld is a free alternative that brings that same experience while giving players more freedom, customization, and multiplayer interaction.
 
 Geoworld is a multiplayer geography game where you can explore real-world locations, guess where you are, and challenge friends or strangers in real time.
 
@@ -16,7 +16,7 @@ Geoworld is a multiplayer geography game where you can explore real-world locati
   - Explore maps made by other players
 
 - 🎮 **Multiplayer Gameplay**
-  - 1v1 matches against friends or random players
+  - 1v1 matches against friends
   - Real-time gameplay powered by sockets
   - Competitive scoring system
 
