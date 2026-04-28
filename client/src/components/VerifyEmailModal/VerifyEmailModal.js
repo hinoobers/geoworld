@@ -50,40 +50,68 @@ const VerifyEmailModal = () => {
         }
     };
 
+    const primaryBtnStyle = {
+        border: "none",
+        borderRadius: 10,
+        padding: "10px 16px",
+        fontWeight: 700,
+        cursor: sending ? "not-allowed" : "pointer",
+        background: "linear-gradient(90deg, #2a9d8f 0%, #3a86ff 100%)",
+        color: "#ffffff",
+        opacity: sending ? 0.7 : 1,
+        transition: "transform 0.15s ease, box-shadow 0.15s ease",
+        boxShadow: "0 4px 14px rgba(58, 134, 255, 0.35)",
+    };
+    const secondaryBtnStyle = {
+        border: "1px solid rgba(141, 180, 216, 0.45)",
+        borderRadius: 10,
+        padding: "10px 16px",
+        fontWeight: 600,
+        cursor: sending ? "not-allowed" : "pointer",
+        background: "transparent",
+        color: "#f5f9ff",
+        opacity: sending ? 0.7 : 1,
+        transition: "background 0.15s ease",
+    };
+
     return (
         <div
             style={{
                 position: "fixed",
                 inset: 0,
-                background: "rgba(0,0,0,0.6)",
+                background: "rgba(2, 8, 14, 0.65)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 zIndex: 9999,
+                padding: 16,
             }}
             onClick={() => setOpen(false)}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    background: "#1f2233",
-                    color: "#f5f6ff",
+                    background: "rgba(8, 18, 30, 0.96)",
+                    border: "1px solid rgba(141, 180, 216, 0.35)",
+                    color: "#f5f9ff",
                     padding: "24px 28px",
-                    borderRadius: 10,
+                    borderRadius: 16,
                     maxWidth: 440,
-                    width: "90%",
-                    boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+                    width: "100%",
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
                 }}
             >
-                <h2 style={{ marginTop: 0 }}>Verify your email</h2>
-                <p>Please verify your email address before playing. Check your inbox for the verification link.</p>
-                {message ? <p style={{ color: "#9af0a8" }}>{message}</p> : null}
-                {error ? <p style={{ color: "#ff9aa2" }}>{error}</p> : null}
-                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
-                    <button type="button" onClick={() => setOpen(false)} disabled={sending}>
+                <h2 style={{ marginTop: 0, marginBottom: 10 }}>Verify your email</h2>
+                <p style={{ margin: "7px 0", lineHeight: 1.5 }}>
+                    Please verify your email address before playing. Check your inbox for the verification link.
+                </p>
+                {message ? <p style={{ color: "#9af0a8", margin: "7px 0" }}>{message}</p> : null}
+                {error ? <p style={{ color: "#ff9aa2", margin: "7px 0" }}>{error}</p> : null}
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
+                    <button type="button" onClick={() => setOpen(false)} disabled={sending} style={secondaryBtnStyle}>
                         Close
                     </button>
-                    <button type="button" onClick={handleResend} disabled={sending}>
+                    <button type="button" onClick={handleResend} disabled={sending} style={primaryBtnStyle}>
                         {sending ? "Sending..." : "Resend verification link"}
                     </button>
                 </div>
