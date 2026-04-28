@@ -48,6 +48,7 @@ const LandingPage = () => {
                     <div className="buttons">
                         <button onClick={() => navigate("/login")}>Log in</button>
                         <button onClick={() => navigate("/signup")}>Create Account</button>
+                        <button onClick={() => navigate("/demo")}>Play Demo</button>
                     </div>
                 </div>
 

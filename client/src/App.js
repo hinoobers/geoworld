@@ -22,6 +22,7 @@ import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import CountryStreakPage from './pages/CountryStreakPage/CountryStreakPage';
 import OAuthCallback from './pages/Account/OAuthCallback/OAuthCallback';
 import VerifyEmail from './pages/Account/VerifyEmail/VerifyEmail';
+import DemoPage from './pages/DemoPage/DemoPage';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
           <Route path="/verified" element={<VerifyEmail />} />
+          <Route path="/demo" element={<DemoPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>

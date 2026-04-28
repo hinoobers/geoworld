@@ -41,7 +41,25 @@ function getAuthToken() {
 }
 
 let cachedKeyPromise = null;
-function fetchApiKey() {
+let cachedDemoKeyPromise = null;
+function fetchApiKey(demo = false) {
+    if (demo) {
+        if (cachedDemoKeyPromise) return cachedDemoKeyPromise;
+        cachedDemoKeyPromise = fetch(`${API_BASE_URL}/demo/streetview-config`)
+            .then(async (res) => {
+                if (!res.ok) {
+                    const body = await res.json().catch(() => null);
+                    throw new Error(body?.error || "Failed to load street view config");
+                }
+                return res.json();
+            })
+            .then((body) => body.key)
+            .catch((err) => {
+                cachedDemoKeyPromise = null;
+                throw err;
+            });
+        return cachedDemoKeyPromise;
+    }
     if (cachedKeyPromise) return cachedKeyPromise;
     const token = getAuthToken();
     cachedKeyPromise = fetch(`${API_BASE_URL}/streetview/config`, {
@@ -88,6 +106,7 @@ const StreetViewPano = ({
     allowZoom = true,
     allowLook = true,
     className,
+    demo = false,
 }) => {
     const wrapperRef = useRef(null);
     const containerRef = useRef(null);
@@ -99,7 +118,7 @@ const StreetViewPano = ({
 
         (async () => {
             try {
-                const key = await fetchApiKey();
+                const key = await fetchApiKey(demo);
                 if (cancelled) return;
                 await loadGoogleMapsScript(key);
                 if (cancelled || !containerRef.current) return;
@@ -131,7 +150,7 @@ const StreetViewPano = ({
         return () => {
             cancelled = true;
         };
-    }, [lat, lng, heading, pitch, zoom, allowMove, allowZoom]);
+    }, [lat, lng, heading, pitch, zoom, allowMove, allowZoom, demo]);
 
     if (error) {
         return <div className={className}>{error}</div>;
