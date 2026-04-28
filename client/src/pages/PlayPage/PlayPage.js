@@ -116,11 +116,6 @@ function isCompleted(game) {
 }
 
 const PlayPage = () => {
-    if(true) {
-        return (<div className="page">
-            Under development due to ongoing updates. Check back later!
-        </div>);
-    }
     const navigate = useNavigate();
     const location = useLocation();
     const { token, isLoggedIn } = useAuth();
@@ -311,6 +306,12 @@ const PlayPage = () => {
             document.removeEventListener("visibilitychange", onVisibilityChange);
         };
     }, [game?.game_id, token]);
+
+    if(true) {
+        return (<div className="page">
+            Under development due to ongoing updates. Check back later!
+        </div>);
+    }
 
     const handleStartGame = async () => {
         if (!selectedMapId) {
