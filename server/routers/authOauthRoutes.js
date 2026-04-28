@@ -12,23 +12,34 @@ const PFP_DIR = path.join(__dirname, "..", "uploads", "pfps");
 
 async function downloadAndSavePfp(imageUrl) {
     if (!imageUrl) return null;
+
     try {
         const response = await fetch(imageUrl);
         if (!response.ok) return null;
 
-        const buffer = await response.buffer();
-        const ext = imageUrl.includes(".png") ? "png" : "jpg";
+        const contentType = response.headers.get("content-type") || "";
+
+        let ext = "jpg";
+        if (contentType.includes("png")) ext = "png";
+        else if (contentType.includes("webp")) ext = "webp";
+        else if (contentType.includes("gif")) ext = "gif";
+        else if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = "jpg";
+
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
         const filename = `${crypto.randomBytes(8).toString("hex")}.${ext}`;
         const filepath = path.join(PFP_DIR, filename);
 
         await fs.writeFile(filepath, buffer);
+
         return filename;
-    } catch {
+    } catch (error) {
+        console.error("Failed to download or save profile picture from", imageUrl, error);
         return null;
     }
 }
 
-// CSRF state cache: state -> { provider, expires }
 const oauthStates = new Map();
 function issueState(provider) {
     const state = crypto.randomBytes(16).toString("hex");
@@ -92,11 +103,19 @@ async function findOrCreateOauthUser({ email, accountType, providerName }) {
 }
 
 async function updateUserPfp(userId, pfpFilename) {
-    if (!pfpFilename) return;
+    if (!pfpFilename) {
+        console.warn(`No profile picture filename provided for user ${userId}`);
+        return;
+    }
     try {
-        await db.query("UPDATE users SET profile_pfp = ? WHERE id = ?", [pfpFilename, userId]);
-    } catch {
-        // Ignore pfp update failures
+        const result = await db.query("UPDATE users SET profile_pfp = ? WHERE id = ?", [pfpFilename, userId]);
+        if (result.affectedRows === 0) {
+            console.warn(`No user found with ID ${userId} to update profile picture`);
+        } else {
+            console.log(`Profile picture updated for user ${userId}`);
+        }
+    } catch (error) {
+        console.error(`Failed to update profile picture for user ${userId}:`, error);
     }
 }
 
@@ -160,8 +179,15 @@ router.get("/discord/callback", async (req, res) => {
         }
 
         // Grab Discord avatar
+        const user = await findOrCreateOauthUser({
+            email: me.email,
+            accountType: "discord",
+            providerName: me.username || me.global_name,
+        });
+
         if (me.avatar && me.id) {
-            const avatarUrl = `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.${me.avatar.startsWith("a_") ? "gif" : "png"}`;
+            const avatarUrl = `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}`;
+            console.log("Downloading Discord avatar from", avatarUrl);
             const pfpFilename = await downloadAndSavePfp(avatarUrl);
             if (pfpFilename) {
                 await updateUserPfp(user.id, pfpFilename);
@@ -169,11 +195,6 @@ router.get("/discord/callback", async (req, res) => {
         }
 
 
-        const user = await findOrCreateOauthUser({
-            email: me.email,
-            accountType: "discord",
-            providerName: me.username || me.global_name,
-        });
         if (Number(user.is_restricted) === 1) {
             return redirectWithError(res, "Your account is restricted");
         }
@@ -236,15 +257,6 @@ router.get("/google/callback", async (req, res) => {
         }
         if (me.email_verified === false) {
             return redirectWithError(res, "Verify your Google email first, then try again");
-
-        // Grab Google profile picture
-        if (me.picture) {
-            const pfpFilename = await downloadAndSavePfp(me.picture);
-            if (pfpFilename) {
-                await updateUserPfp(user.id, pfpFilename);
-            }
-        }
-
         }
 
         const user = await findOrCreateOauthUser({
@@ -252,6 +264,14 @@ router.get("/google/callback", async (req, res) => {
             accountType: "google",
             providerName: me.name || me.given_name,
         });
+
+        console.log(me);
+        if (me.picture) {
+            const pfpFilename = await downloadAndSavePfp(me.picture);
+            if (pfpFilename) {
+                await updateUserPfp(user.id, pfpFilename);
+            }
+        }
         if (Number(user.is_restricted) === 1) {
             return redirectWithError(res, "Your account is restricted");
         }

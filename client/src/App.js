@@ -21,6 +21,7 @@ import LeaderboardPage from './pages/LeaderboardPage/LeaderboardPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import CountryStreakPage from './pages/CountryStreakPage/CountryStreakPage';
 import OAuthCallback from './pages/Account/OAuthCallback/OAuthCallback';
+import VerifyEmail from './pages/Account/VerifyEmail/VerifyEmail';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
+          <Route path="/verifed" element={<VerifyEmail />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
