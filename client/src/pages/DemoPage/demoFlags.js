@@ -84,24 +84,58 @@ async function idbSet(key, value) {
 }
 
 export async function hasDemoBeenPlayed() {
+    let found = null;
+    const missing = { ls: [], ss: false, cookie: false, idb: false };
+
     try {
         for (const k of LS_KEYS) {
             const v = window.localStorage?.getItem(k);
-            if (v && v.includes(TRUTHY_TOKEN)) return true;
+            if (v && v.includes(TRUTHY_TOKEN)) {
+                if (!found) found = v;
+            } else {
+                missing.ls.push(k);
+            }
         }
     } catch {
         /* ignore */
     }
     try {
         const v = window.sessionStorage?.getItem(SS_KEY);
-        if (v && v.includes(TRUTHY_TOKEN)) return true;
+        if (v && v.includes(TRUTHY_TOKEN)) {
+            if (!found) found = v;
+        } else {
+            missing.ss = true;
+        }
     } catch {
         /* ignore */
     }
-    if ((getCookie(COOKIE_NAME) || "").includes(TRUTHY_TOKEN)) return true;
+    const cookieVal = getCookie(COOKIE_NAME) || "";
+    if (cookieVal.includes(TRUTHY_TOKEN)) {
+        if (!found) found = cookieVal;
+    } else {
+        missing.cookie = true;
+    }
     const idbVal = await idbGet(IDB_KEY);
-    if (idbVal && String(idbVal).includes(TRUTHY_TOKEN)) return true;
-    return false;
+    if (idbVal && String(idbVal).includes(TRUTHY_TOKEN)) {
+        if (!found) found = String(idbVal);
+    } else {
+        missing.idb = true;
+    }
+
+    if (!found) return false;
+
+    try {
+        for (const k of missing.ls) window.localStorage?.setItem(k, found);
+    } catch {
+        /* ignore */
+    }
+    if (missing.ss) {
+        try { window.sessionStorage?.setItem(SS_KEY, found); } catch { /* ignore */ }
+    }
+    if (missing.cookie) setCookie(COOKIE_NAME, found);
+    if (missing.idb) await idbSet(IDB_KEY, found);
+
+    return true;
 }
 
 export async function markDemoAsPlayed() {

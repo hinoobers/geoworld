@@ -145,7 +145,7 @@ const DemoPage = () => {
                 <section className="finish-screen">
                     <div className="finish-card">
                         <h2>Demo Already Played</h2>
-                        <p>You've already tried the demo on this browser. Sign up for unlimited play!</p>
+                        <p>You've already tried the demo!. Sign up for unlimited play!</p>
                         <div className="finish-actions">
                             <button type="button" onClick={() => navigate("/signup")}>Create Account</button>
                             <button type="button" onClick={() => navigate("/")}>Back</button>
@@ -162,7 +162,7 @@ const DemoPage = () => {
                 <section className="finish-screen">
                     <div className="finish-card">
                         <h2>GeoWorld Demo</h2>
-                        <p>One free location, one guess. No account needed.</p>
+                        <p>Try our platform once on a demo location!</p>
                         {error ? <p className="play-error">{error}</p> : null}
                         <div className="finish-actions">
                             <button type="button" onClick={startDemo} disabled={loading}>
@@ -171,7 +171,7 @@ const DemoPage = () => {
                             <button type="button" onClick={() => navigate("/")}>Back</button>
                         </div>
                         <p style={{ marginTop: 12, opacity: 0.75, fontSize: 13 }}>
-                            Want more rounds, custom maps, multiplayer? <Link to="/signup">Create an account</Link>.
+                            Want more rounds, custom maps, multiplayer? <Link to="/signup" style={{ color: "#4ea1ff", textDecoration: "underline" }}>Create an account</Link>.
                         </p>
                     </div>
                 </section>
