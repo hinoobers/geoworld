@@ -115,10 +115,12 @@ const Login = () => {
                     <div className="oauth-divider"><span>or</span></div>
                     <div className="oauth-buttons">
                         <a className="oauth-btn oauth-btn-google" href={`${process.env.REACT_APP_API_URL}/auth/google`}>
-                            Continue with Google
+                            <span className="oauth-icon">🔍</span>
+                            <span className="oauth-text">Continue with Google</span>
                         </a>
                         <a className="oauth-btn oauth-btn-discord" href={`${process.env.REACT_APP_API_URL}/auth/discord`}>
-                            Continue with Discord
+                            <span className="oauth-icon">💬</span>
+                            <span className="oauth-text">Continue with Discord</span>
                         </a>
                     </div>
                 </div>

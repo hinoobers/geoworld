@@ -80,3 +80,79 @@
 	text-decoration: underline;
 	cursor: pointer;
 }
+
+.oauth-divider {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	margin: 20px 0 16px 0;
+	gap: 10px;
+	color: #666;
+	font-size: 14px;
+}
+
+.oauth-divider span {
+	flex: 0;
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background-color: #333;
+}
+
+.oauth-buttons {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.oauth-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 12px 16px;
+	font-size: 15px;
+	font-weight: 500;
+	border: none;
+	border-radius: 7px;
+	cursor: pointer;
+	text-decoration: none;
+	transition: all 0.2s ease;
+	border: 1px solid transparent;
+}
+
+.oauth-btn-google {
+	background-color: white;
+	color: #1f2937;
+	border: 1px solid #e5e7eb;
+}
+
+.oauth-btn-google:hover {
+	background-color: #f9fafb;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.oauth-btn-discord {
+	background-color: #5865f2;
+	color: white;
+}
+
+.oauth-btn-discord:hover {
+	background-color: #4752c4;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+}
+
+.oauth-icon {
+	font-size: 18px;
+}
+
+.oauth-text {
+	font-weight: 500;
+}
