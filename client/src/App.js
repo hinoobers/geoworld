@@ -43,6 +43,7 @@ function App() {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>

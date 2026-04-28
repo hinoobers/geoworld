@@ -71,7 +71,7 @@ async function findOrCreateOauthUser({ email, accountType, providerName }) {
 }
 
 function redirectWithToken(res, token) {
-    return res.redirect(`https://geoworld.pnglin.byenoob.com/oauth/callback?token=${encodeURIComponent(token)}`);
+    return res.redirect(`${FRONTEND_URL}/oauth/callback?token=${encodeURIComponent(token)}`);
 }
 
 function redirectWithError(res, message) {
