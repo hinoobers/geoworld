@@ -4,8 +4,29 @@ const bcrypt = require("bcrypt");
 const router = express.Router();
 const db = require("../database");
 const { generateToken } = require("../auth");
+const path = require("path");
+const fs = require("fs/promises");
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://geoworld.byenoob.com";
+const PFP_DIR = path.join(__dirname, "..", "uploads", "pfps");
+
+async function downloadAndSavePfp(imageUrl) {
+    if (!imageUrl) return null;
+    try {
+        const response = await fetch(imageUrl);
+        if (!response.ok) return null;
+
+        const buffer = await response.buffer();
+        const ext = imageUrl.includes(".png") ? "png" : "jpg";
+        const filename = `${crypto.randomBytes(8).toString("hex")}.${ext}`;
+        const filepath = path.join(PFP_DIR, filename);
+
+        await fs.writeFile(filepath, buffer);
+        return filename;
+    } catch {
+        return null;
+    }
+}
 
 // CSRF state cache: state -> { provider, expires }
 const oauthStates = new Map();
@@ -70,6 +91,15 @@ async function findOrCreateOauthUser({ email, accountType, providerName }) {
     };
 }
 
+async function updateUserPfp(userId, pfpFilename) {
+    if (!pfpFilename) return;
+    try {
+        await db.query("UPDATE users SET profile_pfp = ? WHERE id = ?", [pfpFilename, userId]);
+    } catch {
+        // Ignore pfp update failures
+    }
+}
+
 function redirectWithToken(res, token) {
     return res.redirect(`${FRONTEND_URL}/oauth/callback?token=${encodeURIComponent(token)}`);
 }
@@ -128,6 +158,16 @@ router.get("/discord/callback", async (req, res) => {
         if (me.verified === false) {
             return redirectWithError(res, "Verify your Discord email first, then try again");
         }
+
+        // Grab Discord avatar
+        if (me.avatar && me.id) {
+            const avatarUrl = `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.${me.avatar.startsWith("a_") ? "gif" : "png"}`;
+            const pfpFilename = await downloadAndSavePfp(avatarUrl);
+            if (pfpFilename) {
+                await updateUserPfp(user.id, pfpFilename);
+            }
+        }
+
 
         const user = await findOrCreateOauthUser({
             email: me.email,
@@ -196,6 +236,15 @@ router.get("/google/callback", async (req, res) => {
         }
         if (me.email_verified === false) {
             return redirectWithError(res, "Verify your Google email first, then try again");
+
+        // Grab Google profile picture
+        if (me.picture) {
+            const pfpFilename = await downloadAndSavePfp(me.picture);
+            if (pfpFilename) {
+                await updateUserPfp(user.id, pfpFilename);
+            }
+        }
+
         }
 
         const user = await findOrCreateOauthUser({
