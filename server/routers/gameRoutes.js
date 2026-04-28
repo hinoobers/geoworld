@@ -400,6 +400,24 @@ router.post("/country-streak/start", middleware, async (req, res) => {
     }
 });
 
+router.post("/country-streak/register-round", middleware, async (req, res) => {
+    const { game_id, candidate } = req.body || {};
+    if (!game_id || !candidate) {
+        return res.status(400).json({ error: "game_id and candidate are required" });
+    }
+    try {
+        const result = await countryStreakHandler.registerNextRound(
+            game_id,
+            req.user.id,
+            candidate
+        );
+        return res.json(result);
+    } catch (error) {
+        const status = error?.statusCode || 500;
+        return res.status(status).json({ error: error?.message || "Failed to register round" });
+    }
+});
+
 router.post("/country-streak/guess", middleware, async (req, res) => {
     const { game_id, country_code } = req.body || {};
     if (!game_id || !country_code) {

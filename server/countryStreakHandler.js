@@ -1,11 +1,8 @@
 const { randomUUID } = require("crypto");
 const db = require("./database");
-const { pickStreetViewWithCountry } = require("./streetviewDynamic");
 const { insertMapPositionWithFallbacks } = require("./routers/mapRoutes");
 
 const activeStreakGames = new Map();
-
-const RECENT_COUNTRY_EXCLUDE = 3;
 
 async function createDynamicMapForStreak(ownerId) {
     const createdAt = new Date().toISOString().replace("T", " ").slice(0, 19);
@@ -50,7 +47,6 @@ async function appendStreakPosition(mapId, candidate) {
         note: `${candidate.country_code} — ${candidate.country_name}`,
     };
     await insertMapPositionWithFallbacks(mapId, position);
-    return position;
 }
 
 function buildOneSideJson(ownerId, game) {
@@ -89,6 +85,7 @@ async function persistGame(game) {
 
 function publicView(game) {
     const currentRound = game.rounds[game.current_round_index] || null;
+    const showRound = currentRound && game.status === "active" && !currentRound.guessed;
     return {
         game_id: game.game_id,
         mode: "country_streak",
@@ -97,7 +94,9 @@ function publicView(game) {
         current_round: game.current_round_index + 1,
         total_rounds: game.rounds.length,
         last_result: game.last_result || null,
-        current_street_view: currentRound && game.status === "active"
+        awaiting_round: game.status === "active" && !showRound,
+        recent_countries: game.recent_countries.slice(-5),
+        current_street_view: showRound
             ? {
                 lat: currentRound.lat,
                 lng: currentRound.lng,
@@ -113,18 +112,6 @@ function publicView(game) {
 async function startCountryStreakGame(ownerId) {
     const { mapId } = await createDynamicMapForStreak(ownerId);
 
-    const initial = [];
-    const usedCountries = [];
-    for (let i = 0; i < 2; i += 1) {
-        const candidate = await pickStreetViewWithCountry(usedCountries);
-        if (!candidate) {
-            throw new Error("Could not generate enough countries");
-        }
-        await appendStreakPosition(mapId, candidate);
-        initial.push(candidate);
-        usedCountries.push(candidate.country_code);
-    }
-
     const game = {
         game_id: randomUUID(),
         owner_id: ownerId,
@@ -132,14 +119,8 @@ async function startCountryStreakGame(ownerId) {
         status: "active",
         streak: 0,
         current_round_index: 0,
-        rounds: initial.map((c) => ({
-            lat: c.lat,
-            lng: c.lng,
-            pano_id: c.pano_id,
-            country_code: c.country_code,
-            country_name: c.country_name,
-        })),
-        recent_countries: usedCountries,
+        rounds: [],
+        recent_countries: [],
         last_result: null,
         db_game_id: null,
         last_activity_at: Date.now(),
@@ -165,58 +146,82 @@ function findGameForUser(gameId, ownerId) {
     return game;
 }
 
+function validateCandidate(candidate) {
+    if (!candidate) throw Object.assign(new Error("candidate is required"), { statusCode: 400 });
+    const lat = Number(candidate.lat);
+    const lng = Number(candidate.lng);
+    const code = String(candidate.country_code || "").toUpperCase();
+    const name = String(candidate.country_name || code || "").trim();
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        throw Object.assign(new Error("lat and lng must be numbers"), { statusCode: 400 });
+    }
+    if (!/^[A-Z]{2}$/.test(code)) {
+        throw Object.assign(new Error("country_code must be a 2-letter ISO code"), { statusCode: 400 });
+    }
+    return {
+        lat,
+        lng,
+        pano_id: candidate.pano_id ? String(candidate.pano_id) : null,
+        country_code: code,
+        country_name: name || code,
+    };
+}
+
+async function registerNextRound(gameId, ownerId, rawCandidate) {
+    const game = findGameForUser(gameId, ownerId);
+    if (game.status !== "active") {
+        throw Object.assign(new Error("Game already finished"), { statusCode: 400 });
+    }
+    const current = game.rounds[game.current_round_index];
+    if (current && !current.guessed) {
+        // already have an active round — return as-is
+        return publicView(game);
+    }
+    const candidate = validateCandidate(rawCandidate);
+    await appendStreakPosition(game.map_id, candidate);
+    game.rounds.push({
+        lat: candidate.lat,
+        lng: candidate.lng,
+        pano_id: candidate.pano_id,
+        country_code: candidate.country_code,
+        country_name: candidate.country_name,
+        guessed: false,
+    });
+    game.current_round_index = game.rounds.length - 1;
+    game.recent_countries.push(candidate.country_code);
+    game.last_activity_at = Date.now();
+    await persistGame(game);
+    return publicView(game);
+}
+
 async function submitCountryGuess(gameId, ownerId, guessedCode) {
     const game = findGameForUser(gameId, ownerId);
     if (game.status !== "active") {
-        const error = new Error("Game already finished");
-        error.statusCode = 400;
-        throw error;
+        throw Object.assign(new Error("Game already finished"), { statusCode: 400 });
     }
 
     const round = game.rounds[game.current_round_index];
-    if (!round) {
-        const error = new Error("No active round");
-        error.statusCode = 400;
-        throw error;
+    if (!round || round.guessed) {
+        throw Object.assign(new Error("No active round"), { statusCode: 400 });
     }
 
     const normalizedGuess = String(guessedCode || "").toUpperCase();
     const correct = normalizedGuess === round.country_code;
+    round.guessed = true;
+
+    game.last_result = {
+        correct,
+        actual_code: round.country_code,
+        actual_name: round.country_name,
+        actual_lat: round.lat,
+        actual_lng: round.lng,
+        guessed_code: normalizedGuess,
+    };
 
     if (correct) {
         game.streak += 1;
-        game.current_round_index += 1;
-        game.last_result = {
-            correct: true,
-            actual_code: round.country_code,
-            actual_name: round.country_name,
-            guessed_code: normalizedGuess,
-        };
-
-        const exclude = game.recent_countries.slice(-RECENT_COUNTRY_EXCLUDE);
-        const next = await pickStreetViewWithCountry(exclude);
-        if (!next) {
-            game.status = "completed";
-            game.last_result.error = "Could not generate next country";
-        } else {
-            await appendStreakPosition(game.map_id, next);
-            game.rounds.push({
-                lat: next.lat,
-                lng: next.lng,
-                pano_id: next.pano_id,
-                country_code: next.country_code,
-                country_name: next.country_name,
-            });
-            game.recent_countries.push(next.country_code);
-        }
     } else {
         game.status = "completed";
-        game.last_result = {
-            correct: false,
-            actual_code: round.country_code,
-            actual_name: round.country_name,
-            guessed_code: normalizedGuess,
-        };
     }
 
     game.last_activity_at = Date.now();
@@ -231,6 +236,7 @@ function getGameInfo(gameId, ownerId) {
 
 module.exports = {
     startCountryStreakGame,
+    registerNextRound,
     submitCountryGuess,
     getGameInfo,
     publicView,

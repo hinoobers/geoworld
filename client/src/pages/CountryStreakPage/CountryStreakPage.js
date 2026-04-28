@@ -1,210 +1,333 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../../components/Header/Header";
+import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import StreetViewPano from "../../components/StreetViewPano/StreetViewPano";
 import { useAuth } from "../../context/AuthContext";
-import COUNTRIES from "../../data/countries";
+import { pickCountryStreakRound } from "../../utils/pickStreetView";
 import "./CountryStreakPage.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
+const BASEMAP_URL =
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+const BASEMAP_ATTRIBUTION = "Tiles &copy; Esri";
+const WORLD_BOUNDS = [[-85, -180], [85, 180]];
+
+function MapInvalidateOnMount() {
+    const map = useMap();
+    useEffect(() => {
+        const t = setTimeout(() => map.invalidateSize(), 150);
+        const onResize = () => map.invalidateSize();
+        window.addEventListener("resize", onResize);
+        return () => {
+            clearTimeout(t);
+            window.removeEventListener("resize", onResize);
+        };
+    }, [map]);
+    return null;
+}
+
+const baseStyle = {
+    weight: 0.6,
+    color: "#5c8dff",
+    fillColor: "#1d2742",
+    fillOpacity: 0.05,
+};
+const hoverStyle = { ...baseStyle, fillColor: "#8f50ff", fillOpacity: 0.35 };
+const selectedStyle = { ...baseStyle, fillColor: "#5c8dff", fillOpacity: 0.55, weight: 1.2, color: "#a4cbff" };
+const correctStyle = { ...baseStyle, fillColor: "#39d38a", fillOpacity: 0.6, color: "#8ff2b7", weight: 1.2 };
+const wrongStyle = { ...baseStyle, fillColor: "#ff5b6e", fillOpacity: 0.6, color: "#ffb1bb", weight: 1.2 };
+
+function CountryLayer({ geojson, selectedCode, lockedResult, onSelect }) {
+    const onEachFeature = useCallback(
+        (feature, layer) => {
+            const iso = (feature.properties.iso || "").toUpperCase();
+            layer.on({
+                mouseover: () => {
+                    if (lockedResult) return;
+                    if (iso === selectedCode) return;
+                    layer.setStyle(hoverStyle);
+                },
+                mouseout: () => {
+                    if (lockedResult) {
+                        applyLockedStyle(layer, iso, lockedResult);
+                        return;
+                    }
+                    layer.setStyle(iso === selectedCode ? selectedStyle : baseStyle);
+                },
+                click: () => {
+                    if (lockedResult) return;
+                    if (!iso) return;
+                    onSelect(iso);
+                },
+            });
+
+            if (lockedResult) {
+                applyLockedStyle(layer, iso, lockedResult);
+            } else {
+                layer.setStyle(iso === selectedCode ? selectedStyle : baseStyle);
+            }
+        },
+        [selectedCode, lockedResult, onSelect]
+    );
+
+    return <GeoJSON key={`${selectedCode}-${lockedResult?.actual_code || ""}`} data={geojson} onEachFeature={onEachFeature} style={baseStyle} />;
+}
+
+function applyLockedStyle(layer, iso, result) {
+    if (iso === result.actual_code) {
+        layer.setStyle(correctStyle);
+    } else if (iso === result.guessed_code && !result.correct) {
+        layer.setStyle(wrongStyle);
+    } else {
+        layer.setStyle(baseStyle);
+    }
+}
+
+async function api(path, token, options = {}) {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            ...(options.headers || {}),
+        },
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(body?.error || "Request failed");
+    return body;
+}
 
 const CountryStreakPage = () => {
     const navigate = useNavigate();
     const { token, isLoggedIn } = useAuth();
 
     const [game, setGame] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [geojson, setGeojson] = useState(null);
+    const [selectedCode, setSelectedCode] = useState("");
     const [error, setError] = useState("");
-    const [selectedCountry, setSelectedCountry] = useState("");
-    const [submitting, setSubmitting] = useState(false);
-    const [lastResult, setLastResult] = useState(null);
+    const [busy, setBusy] = useState(false);
+    const [pickingRound, setPickingRound] = useState(false);
+    const registeringRef = useRef(false);
 
     useEffect(() => {
-        if (!isLoggedIn) {
-            navigate("/login");
-        }
+        if (!isLoggedIn) navigate("/login");
     }, [isLoggedIn, navigate]);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/countries-110m.geojson")
+            .then((r) => r.json())
+            .then((data) => {
+                if (!cancelled) setGeojson(data);
+            })
+            .catch(() => {
+                if (!cancelled) setError("Failed to load country map");
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const sv = game?.current_street_view;
+    const lastResult = game?.last_result;
+    const isFinished = game?.status === "completed";
+    const awaitingRound = game?.awaiting_round;
+    const lockedResult = lastResult && (isFinished || awaitingRound) ? lastResult : null;
+
+    const registerNextRound = useCallback(
+        async (currentGame) => {
+            if (registeringRef.current) return;
+            registeringRef.current = true;
+            setPickingRound(true);
+            setError("");
+            try {
+                const exclude = currentGame.recent_countries || [];
+                const candidate = await pickCountryStreakRound(exclude);
+                if (!candidate) throw new Error("Could not find a Street View location");
+                const updated = await api("/games/country-streak/register-round", token, {
+                    method: "POST",
+                    body: JSON.stringify({ game_id: currentGame.game_id, candidate }),
+                });
+                setGame(updated);
+                setSelectedCode("");
+            } catch (err) {
+                setError(err.message || "Failed to load next round");
+            } finally {
+                setPickingRound(false);
+                registeringRef.current = false;
+            }
+        },
+        [token]
+    );
 
     const startGame = async () => {
         setError("");
-        setLastResult(null);
-        setLoading(true);
+        setBusy(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/games/country-streak/start`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const body = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(body?.error || "Failed to start");
-            setGame(body);
-            setSelectedCountry("");
+            const created = await api("/games/country-streak/start", token, { method: "POST" });
+            setGame(created);
+            setSelectedCode("");
+            await registerNextRound(created);
         } catch (err) {
             setError(err.message || "Failed to start");
         } finally {
-            setLoading(false);
+            setBusy(false);
         }
     };
 
     const submitGuess = async () => {
-        if (!game?.game_id || !selectedCountry) {
-            setError("Pick a country first");
+        if (!game?.game_id || !selectedCode) {
+            setError("Click a country on the map first");
             return;
         }
         setError("");
-        setSubmitting(true);
+        setBusy(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/games/country-streak/guess`, {
+            const updated = await api("/games/country-streak/guess", token, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    game_id: game.game_id,
-                    country_code: selectedCountry,
-                }),
+                body: JSON.stringify({ game_id: game.game_id, country_code: selectedCode }),
             });
-            const body = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(body?.error || "Failed to submit");
-            setLastResult(body.last_result);
-            setGame(body);
-            setSelectedCountry("");
+            setGame(updated);
         } catch (err) {
             setError(err.message || "Failed to submit");
         } finally {
-            setSubmitting(false);
+            setBusy(false);
         }
     };
 
-    const sortedCountries = useMemo(() => COUNTRIES, []);
+    const continueAfterCorrect = () => {
+        if (game) registerNextRound(game);
+    };
 
-    const isActive = game?.status === "active";
-    const isFinished = game?.status === "completed";
-    const sv = game?.current_street_view;
+    const newGame = () => {
+        setGame(null);
+        setSelectedCode("");
+        setError("");
+    };
+
+    const startScreen = !game;
+
+    const handleSelect = useCallback((iso) => setSelectedCode(iso), []);
+
+    const countryLayer = useMemo(() => {
+        if (!geojson) return null;
+        return (
+            <CountryLayer
+                geojson={geojson}
+                selectedCode={selectedCode}
+                lockedResult={lockedResult}
+                onSelect={handleSelect}
+            />
+        );
+    }, [geojson, selectedCode, lockedResult, handleSelect]);
+
+    const selectedName = useMemo(() => {
+        if (!selectedCode || !geojson) return "";
+        const f = geojson.features.find((x) => (x.properties.iso || "").toUpperCase() === selectedCode);
+        return f?.properties?.name || selectedCode;
+    }, [selectedCode, geojson]);
 
     return (
-        <div className="country-streak-page">
-            <Header />
-
-            <main className="country-streak-content">
-                {!game ? (
-                    <section className="country-streak-hero">
-                        <h1>🏳️ Country Streak</h1>
+        <div className="play-page country-streak-play">
+            {startScreen ? (
+                <section className="finish-screen">
+                    <div className="finish-card">
+                        <h2>🏳️ Country Streak</h2>
                         <p>
-                            Guess the country from a Street View. Each correct guess adds +1
-                            and reveals a new country. One wrong guess and the streak ends.
+                            Guess the country from a Street View. Click on the map to highlight your
+                            pick. One wrong guess ends the streak.
                         </p>
-                        <button
-                            type="button"
-                            className="country-streak-primary"
-                            onClick={startGame}
-                            disabled={loading}
-                        >
-                            {loading ? "Loading..." : "Start"}
-                        </button>
-                        {error ? <p className="country-streak-error">{error}</p> : null}
-                    </section>
-                ) : (
-                    <>
-                        <section className="country-streak-bar">
-                            <div>
-                                <span className="country-streak-label">Streak</span>
-                                <strong className="country-streak-value">{game.streak}</strong>
-                            </div>
-                            <div>
-                                <span className="country-streak-label">Round</span>
-                                <strong className="country-streak-value">{game.current_round}</strong>
-                            </div>
-                            <button
-                                type="button"
-                                className="country-streak-ghost"
-                                onClick={() => {
-                                    setGame(null);
-                                    setLastResult(null);
-                                }}
-                            >
-                                Quit
+                        <div className="finish-actions">
+                            <button type="button" onClick={() => navigate("/home")}>Back</button>
+                            <button type="button" onClick={startGame} disabled={busy}>
+                                {busy ? "Loading…" : "Start"}
                             </button>
-                        </section>
+                        </div>
+                        {error ? <p className="play-error">{error}</p> : null}
+                    </div>
+                </section>
+            ) : (
+                <>
+                    {sv ? (
+                        <StreetViewPano
+                            lat={sv.lat}
+                            lng={sv.lng}
+                            heading={sv.rotation || 0}
+                            pitch={sv.pitch || 0}
+                            zoom={sv.zoom || 1}
+                            allowMove
+                            allowZoom
+                            allowLook
+                            className="street-view-full"
+                        />
+                    ) : (
+                        <div className="street-view-empty">
+                            {pickingRound ? "Loading next country…" : "Preparing round…"}
+                        </div>
+                    )}
+
+                    <aside className="hud-panel hud-left">
+                        <div className="hud-actions">
+                            <button type="button" onClick={() => navigate("/home")}>Back</button>
+                        </div>
+                        <h1>Country Streak</h1>
+                        <p className="play-score">
+                            Streak <strong>{game.streak}</strong>
+                            {" · "}Round <strong>{game.current_round}</strong>
+                        </p>
 
                         {lastResult ? (
-                            <section className={`country-streak-result ${lastResult.correct ? "is-correct" : "is-wrong"}`}>
-                                {lastResult.correct ? (
-                                    <p>✅ Correct! That was <strong>{lastResult.actual_name}</strong>.</p>
-                                ) : (
-                                    <p>❌ Wrong — that was <strong>{lastResult.actual_name}</strong>.</p>
-                                )}
-                            </section>
+                            <p className={`streak-result ${lastResult.correct ? "is-correct" : "is-wrong"}`}>
+                                {lastResult.correct
+                                    ? `✅ Correct — ${lastResult.actual_name}`
+                                    : `❌ Wrong — that was ${lastResult.actual_name}`}
+                            </p>
                         ) : null}
 
-                        {isActive && sv ? (
-                            <section className="country-streak-pano-wrap">
-                                <StreetViewPano
-                                    lat={sv.lat}
-                                    lng={sv.lng}
-                                    heading={sv.rotation || 0}
-                                    pitch={sv.pitch || 0}
-                                    zoom={sv.zoom || 1}
-                                    allowMove
-                                    allowZoom
-                                    allowLook
-                                    className="country-streak-pano"
-                                />
-                            </section>
+                        {sv && !lockedResult ? (
+                            <p className="play-muted">
+                                Selected: <strong>{selectedName || "— pick on map —"}</strong>
+                            </p>
                         ) : null}
 
-                        {isActive ? (
-                            <section className="country-streak-guess">
-                                <label htmlFor="country-select">Which country is this?</label>
-                                <select
-                                    id="country-select"
-                                    value={selectedCountry}
-                                    onChange={(e) => setSelectedCountry(e.target.value)}
-                                    disabled={submitting}
-                                >
-                                    <option value="">— Pick a country —</option>
-                                    {sortedCountries.map((c) => (
-                                        <option key={c.code} value={c.code}>{c.name}</option>
-                                    ))}
-                                </select>
-                                <button
-                                    type="button"
-                                    className="country-streak-primary"
-                                    onClick={submitGuess}
-                                    disabled={submitting || !selectedCountry}
-                                >
-                                    {submitting ? "Checking..." : "Submit"}
-                                </button>
-                            </section>
+                        {sv && !lockedResult ? (
+                            <button type="button" onClick={submitGuess} disabled={busy || !selectedCode}>
+                                {busy ? "Checking…" : "Submit guess"}
+                            </button>
+                        ) : null}
+
+                        {awaitingRound && !isFinished ? (
+                            <button type="button" onClick={continueAfterCorrect} disabled={pickingRound}>
+                                {pickingRound ? "Loading…" : "Next country"}
+                            </button>
                         ) : null}
 
                         {isFinished ? (
-                            <section className="country-streak-end">
-                                <h2>Streak ended at {game.streak}</h2>
-                                <div className="country-streak-end-actions">
-                                    <button
-                                        type="button"
-                                        className="country-streak-primary"
-                                        onClick={startGame}
-                                        disabled={loading}
-                                    >
-                                        Play again
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="country-streak-ghost"
-                                        onClick={() => navigate("/home")}
-                                    >
-                                        Back home
-                                    </button>
-                                </div>
-                            </section>
+                            <button type="button" onClick={newGame}>Play again</button>
                         ) : null}
 
-                        {error ? <p className="country-streak-error">{error}</p> : null}
-                    </>
-                )}
-            </main>
+                        {error ? <p className="play-error">{error}</p> : null}
+                    </aside>
+
+                    <div className="hud-panel hud-map streak-map-shell">
+                        <MapContainer
+                            center={[20, 0]}
+                            zoom={1}
+                            minZoom={1}
+                            worldCopyJump
+                            maxBounds={WORLD_BOUNDS}
+                            maxBoundsViscosity={1.0}
+                            scrollWheelZoom
+                            className="guess-map"
+                        >
+                            <TileLayer attribution={BASEMAP_ATTRIBUTION} url={BASEMAP_URL} minZoom={1} maxZoom={10} />
+                            <MapInvalidateOnMount />
+                            {countryLayer}
+                        </MapContainer>
+                    </div>
+                </>
+            )}
         </div>
     );
 };
