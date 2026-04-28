@@ -120,28 +120,8 @@ async function fetchPanoMetadata(lat, lng, key) {
     return res.json().catch(() => null);
 }
 
-async function reverseGeocodeCountry(lat, lng, key) {
-    const url =
-        "https://maps.googleapis.com/maps/api/geocode/json"
-        + `?latlng=${lat},${lng}`
-        + "&result_type=country"
-        + "&language=en"
-        + `&key=${encodeURIComponent(key)}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const body = await res.json().catch(() => null);
-    if (body?.status !== "OK" || !body.results?.[0]) return null;
-    const country = body.results[0].address_components?.find((c) =>
-        c.types?.includes("country")
-    );
-    if (!country?.short_name) return null;
-    return { code: country.short_name, name: country.long_name || country.short_name };
-}
-
-export async function pickCountryStreakRound(excludeCountryCodes = []) {
+export async function pickStreetViewLocation() {
     const key = await fetchApiKey();
-    const exclude = new Set((excludeCountryCodes || []).map((c) => String(c).toUpperCase()));
-
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
         const anchor = pickAnchor();
         const lat = jitter(anchor.lat);
@@ -150,16 +130,10 @@ export async function pickCountryStreakRound(excludeCountryCodes = []) {
         const meta = await fetchPanoMetadata(lat, lng, key);
         if (meta?.status !== "OK" || !meta.location) continue;
 
-        const country = await reverseGeocodeCountry(meta.location.lat, meta.location.lng, key);
-        if (!country?.code) continue;
-        if (exclude.has(country.code.toUpperCase())) continue;
-
         return {
             lat: Number(meta.location.lat),
             lng: Number(meta.location.lng),
             pano_id: meta.pano_id || null,
-            country_code: country.code.toUpperCase(),
-            country_name: country.name,
         };
     }
     return null;

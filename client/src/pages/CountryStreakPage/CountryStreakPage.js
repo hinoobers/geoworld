@@ -4,7 +4,7 @@ import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import StreetViewPano from "../../components/StreetViewPano/StreetViewPano";
 import { useAuth } from "../../context/AuthContext";
-import { pickCountryStreakRound } from "../../utils/pickStreetView";
+import { pickStreetViewLocation } from "../../utils/pickStreetView";
 import "./CountryStreakPage.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
@@ -142,13 +142,25 @@ const CountryStreakPage = () => {
             setPickingRound(true);
             setError("");
             try {
-                const exclude = currentGame.recent_countries || [];
-                const candidate = await pickCountryStreakRound(exclude);
-                if (!candidate) throw new Error("Could not find a Street View location");
-                const updated = await api("/games/country-streak/register-round", token, {
-                    method: "POST",
-                    body: JSON.stringify({ game_id: currentGame.game_id, candidate }),
-                });
+                let updated = null;
+                let lastError = null;
+                for (let attempt = 0; attempt < 6 && !updated; attempt += 1) {
+                    const candidate = await pickStreetViewLocation();
+                    if (!candidate) {
+                        lastError = new Error("Could not find a Street View location");
+                        continue;
+                    }
+                    try {
+                        updated = await api("/games/country-streak/register-round", token, {
+                            method: "POST",
+                            body: JSON.stringify({ game_id: currentGame.game_id, candidate }),
+                        });
+                    } catch (err) {
+                        lastError = err;
+                        // 409 (recent country) or 422 (no country resolved) — retry with a new location
+                    }
+                }
+                if (!updated) throw lastError || new Error("Failed to load next round");
                 setGame(updated);
                 setSelectedCode("");
             } catch (err) {

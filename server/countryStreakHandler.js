@@ -1,6 +1,7 @@
 const { randomUUID } = require("crypto");
 const db = require("./database");
 const { insertMapPositionWithFallbacks } = require("./routers/mapRoutes");
+const { reverseGeocodeCountry } = require("./streetviewDynamic");
 
 const activeStreakGames = new Map();
 
@@ -146,24 +147,27 @@ function findGameForUser(gameId, ownerId) {
     return game;
 }
 
-function validateCandidate(candidate) {
+async function validateCandidate(candidate) {
     if (!candidate) throw Object.assign(new Error("candidate is required"), { statusCode: 400 });
     const lat = Number(candidate.lat);
     const lng = Number(candidate.lng);
-    const code = String(candidate.country_code || "").toUpperCase();
-    const name = String(candidate.country_name || code || "").trim();
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         throw Object.assign(new Error("lat and lng must be numbers"), { statusCode: 400 });
     }
-    if (!/^[A-Z]{2}$/.test(code)) {
-        throw Object.assign(new Error("country_code must be a 2-letter ISO code"), { statusCode: 400 });
+    const apiKey = process.env.GOOGLE_GEOCODING_API_KEY;
+    if (!apiKey) {
+        throw Object.assign(new Error("Geocoding API key not configured"), { statusCode: 500 });
+    }
+    const country = await reverseGeocodeCountry(lat, lng, apiKey);
+    if (!country?.code) {
+        throw Object.assign(new Error("Could not resolve country for location"), { statusCode: 422 });
     }
     return {
         lat,
         lng,
         pano_id: candidate.pano_id ? String(candidate.pano_id) : null,
-        country_code: code,
-        country_name: name || code,
+        country_code: country.code.toUpperCase(),
+        country_name: country.name || country.code,
     };
 }
 
@@ -177,7 +181,10 @@ async function registerNextRound(gameId, ownerId, rawCandidate) {
         // already have an active round — return as-is
         return publicView(game);
     }
-    const candidate = validateCandidate(rawCandidate);
+    const candidate = await validateCandidate(rawCandidate);
+    if (game.recent_countries.slice(-3).includes(candidate.country_code)) {
+        throw Object.assign(new Error("Country recently used, try another location"), { statusCode: 409 });
+    }
     await appendStreakPosition(game.map_id, candidate);
     game.rounds.push({
         lat: candidate.lat,
