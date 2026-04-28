@@ -79,3 +79,36 @@
     color: #c9a4ff;
     font-weight: 800;
 }
+
+.lb-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 auto 18px;
+    max-width: 900px;
+    padding: 0 16px;
+    flex-wrap: wrap;
+}
+
+.lb-tab {
+    border: 1px solid rgba(141, 180, 216, 0.3);
+    background: rgba(8, 18, 30, 0.6);
+    color: #d4e8f8;
+    padding: 9px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+}
+
+.lb-tab.is-active {
+    background: linear-gradient(90deg, #2a9d8f 0%, #3a86ff 100%);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.streak-best {
+    margin: 4px 0 14px;
+    color: #d4e8f8;
+}
+.streak-best strong { color: #ffd166; }
+

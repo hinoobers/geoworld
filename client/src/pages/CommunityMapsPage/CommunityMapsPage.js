@@ -127,6 +127,40 @@ const CommunityMapsPage = () => {
                 {loadError ? <p className="community-error">{loadError}</p> : null}
 
                 <section className="community-list">
+                    <article
+                        className="community-card"
+                        onClick={() => setSelectedMap({
+                            map_id: "worldwide",
+                            name: "Worldwide",
+                            description: "5 random Street View locations from around the world.",
+                            is_worldwide: true,
+                        })}
+                    >
+                        <div className="community-card-head">
+                            <h3>🌍 Worldwide</h3>
+                            <span className="community-badge">Random</span>
+                        </div>
+                        <p className="community-description">Random Street View locations from anywhere on Earth.</p>
+                        <div className="community-card-foot">
+                            <span>5 rounds · dynamic</span>
+                            <button
+                                type="button"
+                                className="community-play"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedMap({
+                                        map_id: "worldwide",
+                                        name: "Worldwide",
+                                        description: "5 random Street View locations from around the world.",
+                                        is_worldwide: true,
+                                    });
+                                }}
+                            >
+                                Play
+                            </button>
+                        </div>
+                    </article>
+
                     {loading ? (
                         <article className="community-card community-card-empty">
                             <h3>Loading community maps</h3>

@@ -5,8 +5,14 @@ import "./LeaderboardPage.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
 
+const TABS = [
+    { id: "global", label: "Global Rating" },
+    { id: "country-streak", label: "Country Streak" },
+];
+
 const LeaderboardPage = () => {
     const { token, user } = useAuth();
+    const [tab, setTab] = useState("global");
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -17,7 +23,12 @@ const LeaderboardPage = () => {
         (async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${API_BASE_URL}/users/leaderboard`, {
+                setError("");
+                setEntries([]);
+                const path = tab === "country-streak"
+                    ? "/games/country-streak/leaderboard"
+                    : "/users/leaderboard";
+                const res = await fetch(`${API_BASE_URL}${path}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const body = await res.json().catch(() => []);
@@ -30,18 +41,35 @@ const LeaderboardPage = () => {
             }
         })();
         return () => { cancelled = true; };
-    }, [token]);
+    }, [token, tab]);
+
+    const isStreak = tab === "country-streak";
 
     return (
         <div className="page">
             <Header />
             <main className="lb-page">
                 <section className="lb-hero">
-                    <h1>Global Leaderboard</h1>
+                    <h1>{isStreak ? "Country Streak Leaderboard" : "Global Leaderboard"}</h1>
                     <p>
-                        Play and guess accurately to level up your rating and climb the ranks! Your leaderboard rating is based on your accuracy and the number of games you've played. The more you play and the better you guess, the higher your rating will be. Compete with players around the world and see how you stack up on the global leaderboard!
+                        {isStreak
+                            ? "Top country-streak runs. Only completed streaks count — closing the tab mid-game does not."
+                            : "Play and guess accurately to level up your rating and climb the ranks!"}
                     </p>
                 </section>
+
+                <div className="lb-tabs">
+                    {TABS.map((t) => (
+                        <button
+                            key={t.id}
+                            type="button"
+                            className={`lb-tab ${tab === t.id ? "is-active" : ""}`}
+                            onClick={() => setTab(t.id)}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
 
                 {error ? <p className="lb-error">{error}</p> : null}
                 {loading ? <p className="lb-empty">Loading…</p> : null}
@@ -54,13 +82,21 @@ const LeaderboardPage = () => {
                     <div className="lb-table-wrap">
                         <table className="lb-table">
                             <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Player</th>
-                                    <th>Rating</th>
-                                    <th>Accuracy</th>
-                                    <th>Games</th>
-                                </tr>
+                                {isStreak ? (
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Player</th>
+                                        <th>Best Streak</th>
+                                    </tr>
+                                ) : (
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Player</th>
+                                        <th>Rating</th>
+                                        <th>Accuracy</th>
+                                        <th>Games</th>
+                                    </tr>
+                                )}
                             </thead>
                             <tbody>
                                 {entries.map((entry, i) => (
@@ -70,9 +106,15 @@ const LeaderboardPage = () => {
                                     >
                                         <td>{i + 1}</td>
                                         <td>{entry.username}</td>
-                                        <td>{entry.rating.toFixed(1)}%</td>
-                                        <td>{entry.accuracy.toFixed(1)}%</td>
-                                        <td>{entry.games_played}</td>
+                                        {isStreak ? (
+                                            <td>{entry.best_streak}</td>
+                                        ) : (
+                                            <>
+                                                <td>{entry.rating.toFixed(1)}%</td>
+                                                <td>{entry.accuracy.toFixed(1)}%</td>
+                                                <td>{entry.games_played}</td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>

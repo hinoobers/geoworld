@@ -108,11 +108,28 @@ const CountryStreakPage = () => {
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
     const [pickingRound, setPickingRound] = useState(false);
+    const [bestStreak, setBestStreak] = useState(null);
     const registeringRef = useRef(false);
 
     useEffect(() => {
         if (!isLoggedIn) navigate("/login");
     }, [isLoggedIn, navigate]);
+
+    const refreshBest = useCallback(async () => {
+        if (!token) return;
+        try {
+            const body = await api("/games/country-streak/best", token);
+            setBestStreak(Number(body?.best) || 0);
+        } catch {
+            // non-fatal
+        }
+    }, [token]);
+
+    useEffect(() => { refreshBest(); }, [refreshBest]);
+
+    useEffect(() => {
+        if (game?.status === "completed") refreshBest();
+    }, [game?.status, refreshBest]);
 
     useEffect(() => {
         let cancelled = false;
@@ -250,6 +267,9 @@ const CountryStreakPage = () => {
                             Guess the country from a Street View. Click on the map to highlight your
                             pick. One wrong guess ends the streak.
                         </p>
+                        <p className="streak-best">
+                            Your best streak: <strong>{bestStreak === null ? "—" : bestStreak}</strong>
+                        </p>
                         <div className="finish-actions">
                             <button type="button" onClick={() => navigate("/home")}>Back</button>
                             <button type="button" onClick={startGame} disabled={busy}>
@@ -286,7 +306,7 @@ const CountryStreakPage = () => {
                         <h1>Country Streak</h1>
                         <p className="play-score">
                             Streak <strong>{game.streak}</strong>
-                            {" · "}Round <strong>{game.current_round}</strong>
+                            {" · "}Best <strong>{bestStreak ?? 0}</strong>
                         </p>
 
                         {lastResult ? (
@@ -297,24 +317,6 @@ const CountryStreakPage = () => {
                             </p>
                         ) : null}
 
-                        {sv && !lockedResult ? (
-                            <p className="play-muted">
-                                Selected: <strong>{selectedName || "— pick on map —"}</strong>
-                            </p>
-                        ) : null}
-
-                        {sv && !lockedResult ? (
-                            <button type="button" onClick={submitGuess} disabled={busy || !selectedCode}>
-                                {busy ? "Checking…" : "Submit guess"}
-                            </button>
-                        ) : null}
-
-                        {awaitingRound && !isFinished ? (
-                            <button type="button" onClick={continueAfterCorrect} disabled={pickingRound}>
-                                {pickingRound ? "Loading…" : "Next country"}
-                            </button>
-                        ) : null}
-
                         {isFinished ? (
                             <button type="button" onClick={newGame}>Play again</button>
                         ) : null}
@@ -323,20 +325,39 @@ const CountryStreakPage = () => {
                     </aside>
 
                     <div className="hud-panel hud-map streak-map-shell">
-                        <MapContainer
-                            center={[20, 0]}
-                            zoom={1}
-                            minZoom={1}
-                            worldCopyJump
-                            maxBounds={WORLD_BOUNDS}
-                            maxBoundsViscosity={1.0}
-                            scrollWheelZoom
-                            className="guess-map"
-                        >
-                            <TileLayer attribution={BASEMAP_ATTRIBUTION} url={BASEMAP_URL} minZoom={1} maxZoom={10} />
-                            <MapInvalidateOnMount />
-                            {countryLayer}
-                        </MapContainer>
+                        <div className="guess-map-shell">
+                            <MapContainer
+                                center={[20, 0]}
+                                zoom={1}
+                                minZoom={1}
+                                worldCopyJump
+                                maxBounds={WORLD_BOUNDS}
+                                maxBoundsViscosity={1.0}
+                                scrollWheelZoom
+                                className="guess-map"
+                            >
+                                <TileLayer attribution={BASEMAP_ATTRIBUTION} url={BASEMAP_URL} minZoom={1} maxZoom={10} />
+                                <MapInvalidateOnMount />
+                                {countryLayer}
+                            </MapContainer>
+                        </div>
+
+                        {sv && !lockedResult ? (
+                            <>
+                                <p className="guess-hint">
+                                    Selected: <strong>{selectedName || "— click a country —"}</strong>
+                                </p>
+                                <button type="button" onClick={submitGuess} disabled={busy || !selectedCode}>
+                                    {busy ? "Checking…" : "Submit guess"}
+                                </button>
+                            </>
+                        ) : null}
+
+                        {awaitingRound && !isFinished ? (
+                            <button type="button" onClick={continueAfterCorrect} disabled={pickingRound}>
+                                {pickingRound ? "Loading…" : "Next country"}
+                            </button>
+                        ) : null}
                     </div>
                 </>
             )}

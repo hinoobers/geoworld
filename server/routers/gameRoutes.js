@@ -390,6 +390,72 @@ router.post("/heartbeat", middleware, (req, res) => {
     }
 });
 
+router.get("/country-streak/best", middleware, async (req, res) => {
+    try {
+        const needle = `%"side":"${req.user.id}"%`;
+        const rows = await db.query(
+            `SELECT one_side FROM games
+             WHERE mode = 'country_streak'
+               AND one_side LIKE ?`,
+            [needle]
+        );
+        let best = 0;
+        for (const row of rows) {
+            const side = parseSide(row.one_side);
+            if (!side || side.status !== "completed") continue;
+            const score = Number(side.score) || 0;
+            if (score > best) best = score;
+        }
+        return res.json({ best });
+    } catch (error) {
+        console.error("[gameRoutes] country streak best failed", error?.message);
+        return res.status(500).json({ error: "Failed to load best streak" });
+    }
+});
+
+router.get("/country-streak/leaderboard", middleware, async (req, res) => {
+    try {
+        const rows = await db.query(
+            "SELECT one_side FROM games WHERE mode = 'country_streak'"
+        );
+        const bestByUser = new Map();
+        for (const row of rows) {
+            const side = parseSide(row.one_side);
+            if (!side || side.status !== "completed") continue;
+            const uid = Number(side.side);
+            if (!uid) continue;
+            const score = Number(side.score) || 0;
+            const prev = bestByUser.get(uid) || 0;
+            if (score > prev) bestByUser.set(uid, score);
+        }
+        if (bestByUser.size === 0) return res.json([]);
+        const ids = [...bestByUser.keys()];
+        const placeholders = ids.map(() => "?").join(",");
+        const users = await db.query(
+            `SELECT id, username, is_restricted FROM users WHERE id IN (${placeholders})`,
+            ids
+        );
+        const usernameById = new Map(
+            users.filter((u) => Number(u.is_restricted) !== 1).map((u) => [Number(u.id), u.username])
+        );
+        const limitRaw = Number(req.query.limit);
+        const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, Math.floor(limitRaw))) : 50;
+        const entries = [...bestByUser.entries()]
+            .map(([uid, best]) => ({
+                user_id: uid,
+                username: usernameById.get(uid),
+                best_streak: best,
+            }))
+            .filter((e) => e.username)
+            .sort((a, b) => b.best_streak - a.best_streak)
+            .slice(0, limit);
+        return res.json(entries);
+    } catch (error) {
+        console.error("[gameRoutes] country streak leaderboard failed", error?.message);
+        return res.status(500).json({ error: "Failed to load country streak leaderboard" });
+    }
+});
+
 router.post("/country-streak/start", middleware, async (req, res) => {
     try {
         const game = await countryStreakHandler.startCountryStreakGame(req.user.id);

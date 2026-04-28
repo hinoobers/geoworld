@@ -1,5 +1,11 @@
 @import "../PlayPage/PlayPage.css";
 
+.country-streak-play .streak-best {
+    margin: 6px 0 14px;
+    color: #d4e8f8;
+}
+.country-streak-play .streak-best strong { color: #ffd166; font-size: 1.1rem; }
+
 .country-streak-play .streak-map-shell {
     padding: 0;
     overflow: hidden;

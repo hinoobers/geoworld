@@ -244,44 +244,12 @@ const FrontPage = () => {
                     </div>
                     <div className="gamemodes-grid">
                         <article
-                            className="gamemode-card gamemode-worldwide"
-                            onClick={() => setSelectedMap({
-                                map_id: "worldwide",
-                                name: "Worldwide",
-                                description: "5 random Street View locations from around the world.",
-                                is_worldwide: true,
-                            })}
-                        >
-                            <span className="gamemode-icon">🌍</span>
-                            <h4>Worldwide</h4>
-                            <p>Random Street View, anywhere on Earth.</p>
-                        </article>
-
-                        <article
                             className="gamemode-card gamemode-streak"
                             onClick={() => navigate("/country-streak")}
                         >
                             <span className="gamemode-icon">🏳️</span>
                             <h4>Country Streak</h4>
                             <p>Guess the country. One wrong guess ends your streak.</p>
-                        </article>
-
-                        <article
-                            className="gamemode-card gamemode-multiplayer"
-                            onClick={() => navigate("/community")}
-                        >
-                            <span className="gamemode-icon">⚔️</span>
-                            <h4>Multiplayer</h4>
-                            <p>Pick a map and challenge a friend head-to-head.</p>
-                        </article>
-
-                        <article
-                            className="gamemode-card gamemode-daily"
-                            onClick={handleDailyButton}
-                        >
-                            <span className="gamemode-icon">📅</span>
-                            <h4>Daily Challenge</h4>
-                            <p>{dailyInfo?.already_played ? "Already played today." : "One map a day, no movement."}</p>
                         </article>
                     </div>
                 </section>
