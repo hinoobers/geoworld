@@ -78,8 +78,34 @@ function buildAuthState(token, fallbackUser = null) {
     };
 }
 
+let fetchInterceptorInstalled = false;
+function installEmailNotVerifiedInterceptor() {
+    if (fetchInterceptorInstalled || typeof window === "undefined" || !window.fetch) return;
+    fetchInterceptorInstalled = true;
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+        const response = await originalFetch(...args);
+        if (response.status === 403) {
+            try {
+                const cloned = response.clone();
+                const body = await cloned.json();
+                if (body?.code === "EMAIL_NOT_VERIFIED") {
+                    window.dispatchEvent(new CustomEvent("geoworld:email-not-verified"));
+                }
+            } catch {
+                /* ignore non-json bodies */
+            }
+        }
+        return response;
+    };
+}
+
 export function AuthProvider({ children }) {
     const [auth, setAuth] = useState(() => readStoredAuth());
+
+    useEffect(() => {
+        installEmailNotVerifiedInterceptor();
+    }, []);
 
     useEffect(() => {
         if (auth) {

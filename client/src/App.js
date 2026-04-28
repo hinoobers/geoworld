@@ -23,10 +23,12 @@ import CountryStreakPage from './pages/CountryStreakPage/CountryStreakPage';
 import OAuthCallback from './pages/Account/OAuthCallback/OAuthCallback';
 import VerifyEmail from './pages/Account/VerifyEmail/VerifyEmail';
 import DemoPage from './pages/DemoPage/DemoPage';
+import VerifyEmailModal from './components/VerifyEmailModal/VerifyEmailModal';
 
 function App() {
   return (
     <AuthProvider>
+      <VerifyEmailModal />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
