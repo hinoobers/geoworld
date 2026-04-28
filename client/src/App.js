@@ -46,7 +46,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
-          <Route path="/verifed" element={<VerifyEmail />} />
+          <Route path="/verified" element={<VerifyEmail />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
