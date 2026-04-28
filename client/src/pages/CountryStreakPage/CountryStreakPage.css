@@ -6,6 +6,17 @@
 }
 .country-streak-play .streak-best strong { color: #ffd166; font-size: 1.1rem; }
 
+.streak-back-button {
+    border: 1px solid rgba(201, 194, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f6ff;
+    border-radius: 999px;
+    padding: 12px 22px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+}
+
 .country-streak-play .streak-map-shell {
     padding: 0;
     overflow: hidden;

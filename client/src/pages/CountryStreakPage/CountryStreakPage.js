@@ -279,6 +279,78 @@ const CountryStreakPage = () => {
                         {error ? <p className="play-error">{error}</p> : null}
                     </div>
                 </section>
+            ) : lockedResult && lockedResult.correct && !isFinished ? (
+                <div className="result-page">
+                    <header className="result-topbar">
+                        <div>
+                            <h2>✅ Correct!</h2>
+                            <p>That was <strong>{lockedResult.actual_name}</strong>.</p>
+                        </div>
+                        <div className="result-meta">
+                            <span>Streak {game.streak} · Best {bestStreak ?? 0}</span>
+                        </div>
+                    </header>
+
+                    <section className="result-map-wrap">
+                        <MapContainer
+                            center={[20, 0]}
+                            zoom={2}
+                            minZoom={1}
+                            worldCopyJump
+                            maxBounds={WORLD_BOUNDS}
+                            maxBoundsViscosity={1.0}
+                            scrollWheelZoom
+                            className="result-map"
+                        >
+                            <TileLayer attribution={BASEMAP_ATTRIBUTION} url={BASEMAP_URL} minZoom={1} maxZoom={10} />
+                            <MapInvalidateOnMount />
+                            {countryLayer}
+                        </MapContainer>
+                    </section>
+
+                    <section className="result-footer">
+                        <div className="result-summary-inline">
+                            <p className="result-points">+1 streak</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="continue-button"
+                            onClick={continueAfterCorrect}
+                            disabled={pickingRound}
+                        >
+                            {pickingRound ? "Loading…" : "Next country"}
+                        </button>
+                        <button
+                            type="button"
+                            className="streak-back-button"
+                            onClick={() => navigate("/home")}
+                        >
+                            Back
+                        </button>
+                    </section>
+                </div>
+            ) : isFinished && lockedResult ? (
+                <section className="finish-screen">
+                    <div className="finish-card">
+                        <h2>Oh, sorry!</h2>
+                        <p>
+                            Your guess: <strong>{lockedResult.guessed_code || "—"}</strong>
+                        </p>
+                        <p>
+                            It was: <strong>{lockedResult.actual_name}</strong> ({lockedResult.actual_code})
+                        </p>
+                        <p className="streak-best">
+                            Streak ended at <strong>{game.streak}</strong> · Best <strong>{bestStreak ?? 0}</strong>
+                        </p>
+                        <div className="finish-actions">
+                            <button type="button" onClick={() => navigate("/home")}>Back</button>
+                            <button type="button" onClick={() => { newGame(); startGame(); }} disabled={busy}>
+                                {busy ? "Loading…" : "Try again"}
+                            </button>
+                        </div>
+                        {error ? <p className="play-error">{error}</p> : null}
+                    </div>
+                </section>
             ) : (
                 <>
                     {sv ? (
@@ -308,19 +380,6 @@ const CountryStreakPage = () => {
                             Streak <strong>{game.streak}</strong>
                             {" · "}Best <strong>{bestStreak ?? 0}</strong>
                         </p>
-
-                        {lastResult ? (
-                            <p className={`streak-result ${lastResult.correct ? "is-correct" : "is-wrong"}`}>
-                                {lastResult.correct
-                                    ? `✅ Correct — ${lastResult.actual_name}`
-                                    : `❌ Wrong — that was ${lastResult.actual_name}`}
-                            </p>
-                        ) : null}
-
-                        {isFinished ? (
-                            <button type="button" onClick={newGame}>Play again</button>
-                        ) : null}
-
                         {error ? <p className="play-error">{error}</p> : null}
                     </aside>
 
@@ -342,22 +401,12 @@ const CountryStreakPage = () => {
                             </MapContainer>
                         </div>
 
-                        {sv && !lockedResult ? (
-                            <>
-                                <p className="guess-hint">
-                                    Selected: <strong>{selectedName || "— click a country —"}</strong>
-                                </p>
-                                <button type="button" onClick={submitGuess} disabled={busy || !selectedCode}>
-                                    {busy ? "Checking…" : "Submit guess"}
-                                </button>
-                            </>
-                        ) : null}
-
-                        {awaitingRound && !isFinished ? (
-                            <button type="button" onClick={continueAfterCorrect} disabled={pickingRound}>
-                                {pickingRound ? "Loading…" : "Next country"}
-                            </button>
-                        ) : null}
+                        <p className="guess-hint">
+                            Selected: <strong>{selectedName || "— click a country —"}</strong>
+                        </p>
+                        <button type="button" onClick={submitGuess} disabled={busy || !selectedCode || !sv}>
+                            {busy ? "Checking…" : "Submit guess"}
+                        </button>
                     </div>
                 </>
             )}

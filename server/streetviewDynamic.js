@@ -165,25 +165,38 @@ async function generateDynamicPositions(count) {
     return positions;
 }
 
-async function reverseGeocodeCountry(lat, lng, apiKey) {
+async function reverseGeocodeCountry(lat, lng, apiKey, caller = "unknown") {
     const url = "https://maps.googleapis.com/maps/api/geocode/json"
         + `?latlng=${lat},${lng}`
         + "&result_type=country"
         + "&language=en"
         + `&key=${encodeURIComponent(apiKey)}`;
 
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const body = await response.json().catch(() => null);
-    if (body?.error_message) {
+    const keyTail = apiKey ? `…${apiKey.slice(-6)}` : "<missing>";
+    const callStack = new Error().stack?.split("\n").slice(2, 5).join(" | ") || "?";
+
+    let response;
+    try {
+        response = await fetch(url);
+    } catch (err) {
         console.error(
-            "[streetviewDynamic] Geocoding API error:",
-            body.status,
-            "-",
-            body.error_message
+            `[geocode] FETCH FAILED caller=${caller} key=${keyTail} latlng=${lat},${lng} err=${err?.message}`
         );
+        console.error(`[geocode]   stack: ${callStack}`);
+        return null;
     }
-    if (body?.status !== "OK" || !body.results?.[0]) return null;
+
+    const body = await response.json().catch(() => null);
+    const status = body?.status || `HTTP_${response.status}`;
+
+    if (body?.error_message || status !== "OK") {
+        console.error(
+            `[geocode] caller=${caller} key=${keyTail} latlng=${lat},${lng} httpStatus=${response.status} apiStatus=${status} msg=${body?.error_message || "<none>"}`
+        );
+        console.error(`[geocode]   stack: ${callStack}`);
+    }
+
+    if (status !== "OK" || !body.results?.[0]) return null;
     const country = body.results[0].address_components?.find((component) =>
         component.types?.includes("country")
     );

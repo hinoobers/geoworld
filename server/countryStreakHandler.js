@@ -158,7 +158,7 @@ async function validateCandidate(candidate) {
     if (!apiKey) {
         throw Object.assign(new Error("Geocoding API key not configured"), { statusCode: 500 });
     }
-    const country = await reverseGeocodeCountry(lat, lng, apiKey);
+    const country = await reverseGeocodeCountry(lat, lng, apiKey, "countryStreak.validateCandidate");
     if (!country?.code) {
         throw Object.assign(new Error("Could not resolve country for location"), { statusCode: 422 });
     }
