@@ -17,7 +17,7 @@ const FAQS = [
     },
     {
         q: "Can I play without signing up?",
-        a: "Yes - try the demo from the landing page. You get to test the game for free. For unlimited rounds, custom maps, country streaks, and multiplayer, you'll need an account.",
+        a: "Yes - try the demo from the landing page. You get to test the game for free. For unlimited rounds, custom maps, more gamemodes and multiplayer, you'll need an account.",
     },
     {
         q: "I didn't get my verification email - what now?",
