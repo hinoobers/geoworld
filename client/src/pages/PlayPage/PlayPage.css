@@ -209,6 +209,14 @@
     bottom: 16px;
     width: min(420px, calc(100% - 32px));
     padding: 10px;
+    transform-origin: bottom right;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hud-map:hover {
+    transform: scale(1.35);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+    z-index: 60;
 }
 
 .guess-map-shell {
