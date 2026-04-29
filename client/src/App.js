@@ -24,6 +24,7 @@ import OAuthCallback from './pages/Account/OAuthCallback/OAuthCallback';
 import VerifyEmail from './pages/Account/VerifyEmail/VerifyEmail';
 import DemoPage from './pages/DemoPage/DemoPage';
 import VerifyEmailModal from './components/VerifyEmailModal/VerifyEmailModal';
+import FaqPage from './pages/FaqPage/FaqPage';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
           <Route path="/oauth/callback" element={<OAuthCallback />} />
           <Route path="/verified" element={<VerifyEmail />} />
           <Route path="/demo" element={<DemoPage />} />
+          <Route path="/faq" element={<FaqPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>

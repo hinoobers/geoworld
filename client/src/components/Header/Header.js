@@ -51,6 +51,7 @@ const Header = () => {
                         <div className="geo-header-section" onClick={() => navigate("/community")}>Maps</div>
                         <div className="geo-header-section" onClick={() => navigate("/games")}>Games</div>
                         <div className="geo-header-section" onClick={() => navigate("/account-settings")}>Account</div>
+                        <div className="geo-header-section" onClick={() => navigate("/faq")}>FAQ</div>
                         {isAdmin && (
                             <div className="geo-header-section" onClick={() => navigate("/admin")}>Admin</div>
                         )}
@@ -59,9 +60,12 @@ const Header = () => {
                         </button>
                     </>
                 ) : (
-                    <button type="button" onClick={handleAuthAction}>
-                        {guestLabel}
-                    </button>
+                    <>
+                        <div className="geo-header-section" onClick={() => navigate("/faq")}>FAQ</div>
+                        <button type="button" onClick={handleAuthAction}>
+                            {guestLabel}
+                        </button>
+                    </>
                 )}
             </div>
         </div>
