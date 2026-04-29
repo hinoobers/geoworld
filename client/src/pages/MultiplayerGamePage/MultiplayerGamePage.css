@@ -88,7 +88,7 @@
 
 .mp-timer-overlay {
     position: absolute;
-    top: 16px;
+    top: 96px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
@@ -116,4 +116,53 @@
 @keyframes mp-timer-pulse {
     0%, 100% { transform: translateX(-50%) scale(1); }
     50% { transform: translateX(-50%) scale(1.06); }
+}
+
+.mp-compass {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    width: 240px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(9, 9, 18, 0.78);
+    border: 1px solid rgba(153, 122, 255, 0.55);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    overflow: hidden;
+    font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
+}
+
+.mp-compass-strip {
+    position: absolute;
+    inset: 0;
+}
+
+.mp-compass-mark {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #d8d4ff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+}
+
+.mp-compass-mark.is-cardinal {
+    color: #f5f6ff;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.mp-compass-tick {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background: #ff5a6e;
+    box-shadow: 0 0 6px rgba(255, 90, 110, 0.8);
 }

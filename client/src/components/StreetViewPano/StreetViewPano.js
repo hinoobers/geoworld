@@ -107,11 +107,18 @@ const StreetViewPano = ({
     allowLook = true,
     className,
     demo = false,
+    onHeadingChange,
 }) => {
     const wrapperRef = useRef(null);
     const containerRef = useRef(null);
     const panoRef = useRef(null);
+    const povListenerRef = useRef(null);
+    const headingCbRef = useRef(onHeadingChange);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        headingCbRef.current = onHeadingChange;
+    }, [onHeadingChange]);
 
     useEffect(() => {
         let cancelled = false;
@@ -142,6 +149,18 @@ const StreetViewPano = ({
                     panoRef.current.setZoom(zoomNum);
                     panoRef.current.setOptions(options);
                 }
+
+                if (headingCbRef.current) {
+                    headingCbRef.current(pov.heading);
+                }
+                if (!povListenerRef.current && panoRef.current) {
+                    povListenerRef.current = panoRef.current.addListener("pov_changed", () => {
+                        const cb = headingCbRef.current;
+                        if (!cb) return;
+                        const next = panoRef.current.getPov();
+                        if (next && Number.isFinite(next.heading)) cb(next.heading);
+                    });
+                }
             } catch (err) {
                 if (!cancelled) setError(err.message || "Street view failed to load");
             }
@@ -151,6 +170,19 @@ const StreetViewPano = ({
             cancelled = true;
         };
     }, [lat, lng, heading, pitch, zoom, allowMove, allowZoom, demo]);
+
+    useEffect(() => {
+        return () => {
+            if (povListenerRef.current) {
+                if (typeof povListenerRef.current.remove === "function") {
+                    povListenerRef.current.remove();
+                } else if (window.google?.maps?.event) {
+                    window.google.maps.event.removeListener(povListenerRef.current);
+                }
+                povListenerRef.current = null;
+            }
+        };
+    }, []);
 
     if (error) {
         return <div className={className}>{error}</div>;

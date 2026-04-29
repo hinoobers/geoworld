@@ -8,7 +8,9 @@ import markerIconUrl from "leaflet/dist/images/marker-icon.png";
 import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { useAuth } from "../../context/AuthContext";
 import StreetViewPano from "../../components/StreetViewPano/StreetViewPano";
+import Compass from "../../components/Compass/Compass";
 import "./PlayPage.css";
+import "../MultiplayerGamePage/MultiplayerGamePage.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
 const DEFAULT_MARKER_ICON = new L.Icon({
@@ -131,6 +133,7 @@ const PlayPage = () => {
     const [loading, setLoading] = useState(false);
     const [showResultScreen, setShowResultScreen] = useState(false);
     const [roundDeadline, setRoundDeadline] = useState(null);
+    const [currentHeading, setCurrentHeading] = useState(0);
     const [now, setNow] = useState(() => Date.now());
     const autoSubmittedRef = useRef(false);
     const autoStartAttempted = useRef(false);
@@ -487,10 +490,19 @@ const PlayPage = () => {
                             allowZoom={game?.allow_zoom !== false}
                             allowLook={game?.allow_look !== false}
                             className="street-view-full"
+                            onHeadingChange={setCurrentHeading}
                         />
                     ) : (
                         <div className="street-view-empty">Start a game to load Street View.</div>
                     )}
+
+                    {streetView ? <Compass heading={currentHeading} /> : null}
+
+                    {timeLeftMs !== null ? (
+                        <div className={`mp-timer-overlay ${timeLeftMs <= 10000 ? "is-critical" : ""}`}>
+                            {Math.floor(timeLeftMs / 60000)}:{String(Math.floor((timeLeftMs % 60000) / 1000)).padStart(2, "0")}
+                        </div>
+                    ) : null}
 
                     <aside className="hud-panel hud-left">
                         <div className="hud-actions">
@@ -499,18 +511,11 @@ const PlayPage = () => {
 
                         <h1>GeoWorld Play</h1>
                         {game ? (
-                            <>
-                                <p className="play-score">
-                                    Round {game.current_round} / {game.total_rounds}
-                                    {" · "}
-                                    <strong>{Number(game.total_score || 0).toLocaleString()} pts</strong>
-                                </p>
-                                {timeLeftMs !== null ? (
-                                    <p className={`play-timer${timeLeftMs <= 10000 ? " is-critical" : ""}`}>
-                                        ⏱ {Math.ceil(timeLeftMs / 1000)}s
-                                    </p>
-                                ) : null}
-                            </>
+                            <p className="play-score">
+                                Round {game.current_round} / {game.total_rounds}
+                                {" · "}
+                                <strong>{Number(game.total_score || 0).toLocaleString()} pts</strong>
+                            </p>
                         ) : (
                             <p className="play-muted">Good luck, and have fun!</p>
                         )}

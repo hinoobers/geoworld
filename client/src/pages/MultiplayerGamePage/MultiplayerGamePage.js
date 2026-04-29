@@ -9,6 +9,7 @@ import markerIconUrl from "leaflet/dist/images/marker-icon.png";
 import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { useAuth } from "../../context/AuthContext";
 import StreetViewPano from "../../components/StreetViewPano/StreetViewPano";
+import Compass from "../../components/Compass/Compass";
 import "./MultiplayerGamePage.css";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/api";
@@ -235,6 +236,7 @@ const MultiplayerGamePage = () => {
     };
 
     const [now, setNow] = useState(() => Date.now());
+    const [currentHeading, setCurrentHeading] = useState(0);
     useEffect(() => {
         const deadline = state?.deadline_ms;
         if (!deadline || state?.revealed) return;
@@ -482,10 +484,13 @@ const MultiplayerGamePage = () => {
                     allowZoom={state?.allow_zoom !== false}
                     allowLook={state?.allow_look !== false}
                     className="street-view-full"
+                    onHeadingChange={setCurrentHeading}
                 />
             ) : (
                 <div className="street-view-empty">Street view unavailable.</div>
             )}
+
+            {streetView ? <Compass heading={currentHeading} /> : null}
 
             {timeLeftMs !== null ? (
                 <div className={`mp-timer-overlay ${timeLeftMs <= 10000 ? "is-critical" : ""}`}>
