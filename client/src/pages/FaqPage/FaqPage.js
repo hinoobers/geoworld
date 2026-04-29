@@ -4,8 +4,12 @@ import "./FaqPage.css";
 
 const FAQS = [
     {
+        q: "How is GeoWorld different from GeoGuessr?",
+        a: "GeoWorld is a free-to-play alternative to GeoGuessr. We do not limit how much and what you can play.",
+    },
+    {
         q: "Why do I need an account?",
-        a: "An account lets us track your stats, save the maps you create, let you play with friends in multiplayer, and put you on the leaderboards. Without an account you can still try the demo, but multiplayer, custom maps, and progression all need an identity to attach to.",
+        a: "An account lets us prevent abuse, track your stats, save the maps you create, let you play with friends in multiplayer, and put you on the leaderboards. Without an account you can still try the demo, but multiplayer, custom maps, and progression all need an identity to attach to.",
     },
     {
         q: "Why do I need to verify my email?",
@@ -13,7 +17,7 @@ const FAQS = [
     },
     {
         q: "Can I play without signing up?",
-        a: "Yes - try the demo from the landing page. You get one free location and one guess. For unlimited rounds, custom maps, country streaks, and multiplayer, you'll need an account.",
+        a: "Yes - try the demo from the landing page. You get to test the game for free. For unlimited rounds, custom maps, country streaks, and multiplayer, you'll need an account.",
     },
     {
         q: "I didn't get my verification email - what now?",
