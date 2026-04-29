@@ -65,7 +65,9 @@ async function requestUserAuth(path, body) {
     const responseBody = await response.json().catch(() => null);
 
     if (!response.ok) {
-        throw new Error(responseBody?.error || "Unable to complete authentication");
+        const err = new Error(responseBody?.error || "Unable to complete authentication");
+        if (responseBody?.code) err.code = responseBody.code;
+        throw err;
     }
 
     return responseBody;

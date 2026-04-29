@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Header from "../../../components/Header/Header";
 import { useAuth } from "../../../context/AuthContext";
 import "./Signup.css";
@@ -19,6 +19,7 @@ const Signup = () => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
+    const [errorCode, setErrorCode] = useState("");
 
     const redirectTo = safeRedirectTarget(searchParams.get("redirect"));
 
@@ -31,12 +32,14 @@ const Signup = () => {
         }
 
         setError("");
+        setErrorCode("");
 
         try {
             await register({ username, email, password });
             navigate(redirectTo);
         } catch (error) {
             setError(error.message);
+            setErrorCode(error.code || "");
         }
     };
 
@@ -86,7 +89,17 @@ const Signup = () => {
                             onChange={(event) => setConfirmPassword(event.target.value)}
                         />
 
-                        {error ? <p className="form-error">{error}</p> : null}
+                        {error ? (
+                            <p className="form-error">
+                                {error}
+                                {errorCode === "disposable_email" ? (
+                                    <>
+                                        {" "}
+                                        <Link to="/faq?q=verify-email">Why?</Link>
+                                    </>
+                                ) : null}
+                            </p>
+                        ) : null}
 
                         <button type="submit">Create Account</button>
                     </form>

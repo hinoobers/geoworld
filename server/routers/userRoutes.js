@@ -6,6 +6,7 @@ const { randomUUID } = require("crypto");
 const db = require("../database");
 const bcrypt = require("bcrypt");
 const { generateToken, middleware, verifyToken, generateEmailVerifyToken } = require("../auth");
+const { isDisposableEmail } = require("../disposableEmailDomains");
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://geoworld.byenoob.com";
 
@@ -128,6 +129,13 @@ router.post("/register", async (req, res) => {
 
     if (!emailRegex.test(email)) {
         return res.status(400).json({ error: "Invalid email" });
+    }
+
+    if (isDisposableEmail(email)) {
+        return res.status(400).json({
+            error: "Disposable or anonymous email providers are not allowed. Please use a real email address.",
+            code: "disposable_email",
+        });
     }
 
     if(password.length < 6) {
