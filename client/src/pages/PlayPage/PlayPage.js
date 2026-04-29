@@ -130,6 +130,9 @@ const PlayPage = () => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [showResultScreen, setShowResultScreen] = useState(false);
+    const [roundDeadline, setRoundDeadline] = useState(null);
+    const [now, setNow] = useState(() => Date.now());
+    const autoSubmittedRef = useRef(false);
     const autoStartAttempted = useRef(false);
     const requestedMapId = useMemo(() => {
         const query = new URLSearchParams(location.search);
@@ -342,23 +345,17 @@ const PlayPage = () => {
         }
     };
 
-    const handleGuessSubmit = async (event) => {
-        event.preventDefault();
-
-        const lat = Number(guessLat);
-        const lng = Number(guessLng);
+    const submitGuessAt = async (lat, lng) => {
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
             setError("Guess must include valid numeric latitude and longitude");
             return;
         }
-
         if (!game?.game_id) {
             setError("Start a game before guessing");
             return;
         }
 
         setError("");
-
         try {
             setLoading(true);
             const result = await apiRequest("/games/guess", token, {
@@ -374,12 +371,49 @@ const PlayPage = () => {
             setShowResultScreen(true);
             setGuessLat("");
             setGuessLng("");
+            setRoundDeadline(null);
         } catch (nextError) {
             setError(nextError.message);
         } finally {
             setLoading(false);
         }
     };
+
+    const handleGuessSubmit = (event) => {
+        event.preventDefault();
+        submitGuessAt(Number(guessLat), Number(guessLng));
+    };
+
+    useEffect(() => {
+        const seconds = Number(game?.round_time_seconds) || 0;
+        if (!game || game.status !== "active" || showResultScreen || seconds <= 0) {
+            setRoundDeadline(null);
+            autoSubmittedRef.current = false;
+            return;
+        }
+        autoSubmittedRef.current = false;
+        setRoundDeadline(Date.now() + seconds * 1000);
+    }, [game?.game_id, game?.current_round, game?.status, game?.round_time_seconds, showResultScreen]);
+
+    useEffect(() => {
+        if (!roundDeadline) return undefined;
+        const id = setInterval(() => setNow(Date.now()), 250);
+        return () => clearInterval(id);
+    }, [roundDeadline]);
+
+    const timeLeftMs = roundDeadline ? Math.max(0, roundDeadline - now) : null;
+
+    useEffect(() => {
+        if (timeLeftMs === null || timeLeftMs > 0) return;
+        if (autoSubmittedRef.current) return;
+        if (!game || game.status !== "active" || showResultScreen) return;
+        autoSubmittedRef.current = true;
+        const lat = Number(guessLat);
+        const lng = Number(guessLng);
+        const fallbackLat = Number.isFinite(lat) ? lat : 0;
+        const fallbackLng = Number.isFinite(lng) ? lng : 0;
+        submitGuessAt(fallbackLat, fallbackLng);
+    }, [timeLeftMs]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="play-page">
@@ -465,11 +499,18 @@ const PlayPage = () => {
 
                         <h1>GeoWorld Play</h1>
                         {game ? (
-                            <p className="play-score">
-                                Round {game.current_round} / {game.total_rounds}
-                                {" · "}
-                                <strong>{Number(game.total_score || 0).toLocaleString()} pts</strong>
-                            </p>
+                            <>
+                                <p className="play-score">
+                                    Round {game.current_round} / {game.total_rounds}
+                                    {" · "}
+                                    <strong>{Number(game.total_score || 0).toLocaleString()} pts</strong>
+                                </p>
+                                {timeLeftMs !== null ? (
+                                    <p className={`play-timer${timeLeftMs <= 10000 ? " is-critical" : ""}`}>
+                                        ⏱ {Math.ceil(timeLeftMs / 1000)}s
+                                    </p>
+                                ) : null}
+                            </>
                         ) : (
                             <p className="play-muted">Good luck, and have fun!</p>
                         )}

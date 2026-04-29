@@ -7,6 +7,7 @@ const db = require("../database");
 const { insertMapPositionWithFallbacks } = require("./mapRoutes");
 const { generateDynamicPositions } = require("../streetviewDynamic");
 const countryStreakHandler = require("../countryStreakHandler");
+const { ALLOWED_ROUND_TIME_SECONDS, normalizeRoundTimeSeconds } = require("../lobbyHandler");
 
 async function createDynamicMap(userId) {
     const positions = await generateDynamicPositions(5);
@@ -239,7 +240,11 @@ router.get("/gameinfo", middleware, (req, res) => {
 });
 
 router.post("/create-game", middleware, requireVerified, async (req, res) => {
-    const { map_id, mode, round_count, allow_move, allow_zoom, allow_look, dynamic } = req.body;
+    const { map_id, mode, round_count, allow_move, allow_zoom, allow_look, dynamic, round_time_seconds } = req.body;
+
+    if (round_time_seconds !== undefined && !ALLOWED_ROUND_TIME_SECONDS.has(Number(round_time_seconds))) {
+        return res.status(400).json({ error: "Invalid round_time_seconds" });
+    }
     // mode can be "singleplayer" or "multiplayer", in multiplayer, a lobby is created instead, start-game is not needed, if multiplayer, then start-game needs to be called
 
     if (!mode) {
@@ -286,6 +291,7 @@ router.post("/create-game", middleware, requireVerified, async (req, res) => {
                 allowMove: allow_move !== false,
                 allowZoom: allow_zoom !== false,
                 allowLook: allow_look !== false,
+                roundTimeSeconds: normalizeRoundTimeSeconds(round_time_seconds),
             }
         );
 
@@ -311,6 +317,7 @@ router.post("/create-game", middleware, requireVerified, async (req, res) => {
             allow_move: game.allow_move !== false,
             allow_zoom: game.allow_zoom !== false,
             allow_look: game.allow_look !== false,
+            round_time_seconds: Number(game.round_time_seconds) || 0,
         });
     } catch (error) {
         if (error.message === "This map has no playable positions") {

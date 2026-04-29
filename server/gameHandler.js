@@ -104,6 +104,7 @@ function buildGameInfo(game, playerId) {
         allow_move: game.allow_move !== false,
         allow_zoom: game.allow_zoom !== false,
         allow_look: game.allow_look !== false,
+        round_time_seconds: Number(game.round_time_seconds) || 0,
     };
 }
 
@@ -303,6 +304,7 @@ async function createGame(mapId, mode, ownerId, requestedRounds, options = {}) {
         allow_move: options.allowMove !== false,
         allow_zoom: options.allowZoom !== false,
         allow_look: options.allowLook !== false,
+        round_time_seconds: Number(options.roundTimeSeconds) || 0,
     };
 
     game.db_game_id = await persistCreatedGame(game, ownerId);

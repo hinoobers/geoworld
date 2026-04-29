@@ -13,6 +13,15 @@ const PlayMapModal = ({ map, onClose }) => {
     const [allowMove, setAllowMove] = useState(true);
     const [allowZoom, setAllowZoom] = useState(true);
     const [allowLook, setAllowLook] = useState(true);
+    const [roundTimeSeconds, setRoundTimeSeconds] = useState(0);
+
+    const ROUND_TIME_OPTIONS = [
+        { value: 0, label: "No time limit" },
+        { value: 30, label: "30 seconds" },
+        { value: 60, label: "60 seconds" },
+        { value: 180, label: "3 minutes" },
+        { value: 300, label: "5 minutes" },
+    ];
 
     if (!map) return null;
 
@@ -33,6 +42,7 @@ const PlayMapModal = ({ map, onClose }) => {
                     allow_move: allowMove,
                     allow_zoom: allowZoom,
                     allow_look: allowLook,
+                    round_time_seconds: roundTimeSeconds,
                 }
                 : {
                     map_id: map.map_id,
@@ -40,6 +50,7 @@ const PlayMapModal = ({ map, onClose }) => {
                     allow_move: allowMove,
                     allow_zoom: allowZoom,
                     allow_look: allowLook,
+                    round_time_seconds: roundTimeSeconds,
                 };
             const response = await fetch(`${API_BASE_URL}/games/create-game`, {
                 method: "POST",
@@ -80,6 +91,7 @@ const PlayMapModal = ({ map, onClose }) => {
                     allow_move: allowMove,
                     allow_zoom: allowZoom,
                     allow_look: allowLook,
+                    round_time_seconds: roundTimeSeconds,
                 }),
             });
             const body = await response.json().catch(() => null);
@@ -126,6 +138,19 @@ const PlayMapModal = ({ map, onClose }) => {
                             onChange={(e) => setAllowLook(e.target.checked)}
                         />
                         Allow looking around
+                    </label>
+                    <label className="play-modal-toggle play-modal-time">
+                        <span>Time limit per round</span>
+                        <select
+                            value={String(roundTimeSeconds)}
+                            onChange={(e) => setRoundTimeSeconds(Number(e.target.value))}
+                        >
+                            {ROUND_TIME_OPTIONS.map((option) => (
+                                <option key={option.value} value={String(option.value)}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     </label>
                 </div>
 

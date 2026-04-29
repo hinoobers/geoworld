@@ -151,6 +151,18 @@
     font-size: 1.05rem;
 }
 
+.play-timer {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #c9a4ff;
+    font-variant-numeric: tabular-nums;
+}
+
+.play-timer.is-critical {
+    color: #ff6b6b;
+}
+
 .play-muted {
     margin: 0 0 6px;
     color: #aab8c8;

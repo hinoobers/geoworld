@@ -72,6 +72,22 @@
     cursor: pointer;
 }
 
+.play-modal-time {
+    flex-basis: 100%;
+    justify-content: space-between;
+    cursor: default;
+}
+
+.play-modal-time select {
+    background: rgba(20, 20, 38, 0.85);
+    color: #f5f6ff;
+    border: 1px solid rgba(201, 194, 255, 0.35);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font: inherit;
+    cursor: pointer;
+}
+
 .play-modal-toggle input[type="checkbox"] {
     width: 16px;
     height: 16px;

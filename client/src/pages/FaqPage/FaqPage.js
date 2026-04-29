@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Header from "../../components/Header/Header";
 import "../Legal/Legal.css";
 import "./FaqPage.css";
@@ -37,23 +38,42 @@ const FAQS = [
     },
 ];
 
-const FaqPage = () => (
-    <div className="page">
-        <Header />
-        <main className="legal-page faq-page">
-            <h1>Frequently Asked Questions</h1>
-            <p className="legal-meta">Answers to the most common questions about GeoWorld.</p>
+const FaqPage = () => {
+    const [openIdx, setOpenIdx] = useState(null);
 
-            <div className="faq-list">
-                {FAQS.map((item, idx) => (
-                    <details key={idx} className="faq-item">
-                        <summary>{item.q}</summary>
-                        <p>{item.a}</p>
-                    </details>
-                ))}
-            </div>
-        </main>
-    </div>
-);
+    return (
+        <div className="page">
+            <Header />
+            <main className="legal-page faq-page">
+                <h1>Frequently Asked Questions</h1>
+                <p className="legal-meta">Answers to the most common questions about GeoWorld.</p>
+
+                <div className="faq-list">
+                    {FAQS.map((item, idx) => {
+                        const open = openIdx === idx;
+                        return (
+                            <div key={idx} className={`faq-item${open ? " open" : ""}`}>
+                                <button
+                                    type="button"
+                                    className="faq-summary"
+                                    aria-expanded={open}
+                                    onClick={() => setOpenIdx(open ? null : idx)}
+                                >
+                                    <span>{item.q}</span>
+                                    <span className="faq-icon" aria-hidden="true">{open ? "−" : "+"}</span>
+                                </button>
+                                <div className="faq-answer">
+                                    <div className="faq-answer-inner">
+                                        <p>{item.a}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </main>
+        </div>
+    );
+};
 
 export default FaqPage;
