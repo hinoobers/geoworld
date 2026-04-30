@@ -459,6 +459,56 @@ router.post("/change-username", middleware, async (req, res) => {
     return res.json({ message: "Username changed successfully", token });
 });
 
+router.delete("/me", middleware, async (req, res) => {
+    const { current_password } = req.body || {};
+
+    try {
+        const rows = await db.query(
+            "SELECT id, password, account_type, profile_pfp, role FROM users WHERE id = ?",
+            [req.user.id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        const user = rows[0];
+
+        if (user.role === "admin") {
+            return res.status(403).json({ error: "Admin accounts cannot be self-deleted." });
+        }
+
+        if (user.account_type === "internal") {
+            if (!current_password || typeof current_password !== "string") {
+                return res.status(400).json({ error: "Current password is required." });
+            }
+            const isMatch = await bcrypt.compare(current_password, user.password || "");
+            if (!isMatch) {
+                return res.status(400).json({ error: "Current password is incorrect." });
+            }
+        }
+
+        const userMaps = await db.query("SELECT id FROM maps WHERE created_by = ?", [user.id]);
+        for (const row of userMaps) {
+            await db.query("DELETE FROM map_positions WHERE map_id = ?", [row.id]).catch(() => {});
+            await db.query("DELETE FROM maps WHERE id = ?", [row.id]).catch(() => {});
+        }
+
+        const result = await db.query("DELETE FROM users WHERE id = ?", [user.id]);
+        if (result.affectedRows === 0) {
+            return res.status(500).json({ error: "Failed to delete account." });
+        }
+
+        if (user.profile_pfp && typeof user.profile_pfp === "string") {
+            const safePrevious = path.basename(user.profile_pfp);
+            await fs.unlink(path.join(PFP_DIR, safePrevious)).catch(() => {});
+        }
+
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("[userRoutes] delete account failed", error?.message);
+        return res.status(500).json({ error: "Failed to delete account." });
+    }
+});
+
 router.post("/reset-password", async (req, res) => {
     const { email } = req.body;
     if (!email) {

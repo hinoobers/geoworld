@@ -205,6 +205,100 @@
     }
 }
 
+.settings-card-danger {
+    border-color: rgba(255, 120, 120, 0.45);
+}
+
+.settings-danger {
+    margin-top: 6px;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    background: linear-gradient(90deg, #d24a4a 0%, #b13838 100%);
+    color: #ffffff;
+}
+
+.settings-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.settings-danger:hover:not(:disabled) {
+    filter: brightness(1.08);
+}
+
+.settings-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+}
+
+.settings-modal {
+    width: 100%;
+    max-width: 460px;
+    border-radius: 16px;
+    padding: 22px;
+    background: linear-gradient(140deg, rgba(28, 28, 50, 0.98), rgba(46, 24, 36, 0.95));
+    border: 1px solid rgba(255, 120, 120, 0.45);
+    color: #f5f6ff;
+    font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.settings-modal h2 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.settings-modal-warning {
+    margin: 0;
+    color: #ffd6d6;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.settings-modal label {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #dad8f5;
+}
+
+.settings-modal input {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border: 1px solid rgba(164, 140, 255, 0.35);
+    border-radius: 10px;
+    outline: none;
+    background: rgba(16, 16, 31, 0.85);
+    color: #f5f6ff;
+    font-family: inherit;
+}
+
+.settings-modal input:focus {
+    border-color: rgba(255, 120, 120, 0.65);
+    box-shadow: 0 0 0 2px rgba(255, 120, 120, 0.2);
+}
+
+.settings-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
 .settings-card-oauth-overlay {
     position: absolute;
     top: 0;

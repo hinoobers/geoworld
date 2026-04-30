@@ -34,6 +34,65 @@ const Settings = () => {
     const [pfpMessage, setPfpMessage] = useState(null);
     const [pfpSubmitting, setPfpSubmitting] = useState(false);
 
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deletePassword, setDeletePassword] = useState("");
+    const [deleteConfirmText, setDeleteConfirmText] = useState("");
+    const [deleteMessage, setDeleteMessage] = useState(null);
+    const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+    const closeDeleteModal = () => {
+        if (deleteSubmitting) return;
+        setDeleteOpen(false);
+        setDeletePassword("");
+        setDeleteConfirmText("");
+        setDeleteMessage(null);
+    };
+
+    const handleDeleteAccount = async (event) => {
+        event.preventDefault();
+        if (deleteSubmitting) return;
+        setDeleteMessage(null);
+
+        if (deleteConfirmText.trim() !== "DELETE") {
+            setDeleteMessage({ kind: "error", text: 'Please type "DELETE" to confirm.' });
+            return;
+        }
+        if (!isOAuthAccount && !deletePassword) {
+            setDeleteMessage({ kind: "error", text: "Please enter your current password." });
+            return;
+        }
+
+        setDeleteSubmitting(true);
+        let response;
+        try {
+            response = await fetch(process.env.REACT_APP_API_URL + "/users/me", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(
+                    isOAuthAccount ? {} : { current_password: deletePassword }
+                ),
+            });
+        } catch (err) {
+            setDeleteSubmitting(false);
+            setDeleteMessage({ kind: "error", text: "Failed to delete account. Please try again." });
+            return;
+        }
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            setDeleteSubmitting(false);
+            setDeleteMessage({ kind: "error", text: result?.error || "Failed to delete account." });
+            return;
+        }
+
+        sessionStorage.setItem("geoworld-auth-flash", "Your account has been deleted.");
+        logout();
+        navigate("/");
+    };
+
     useEffect(() => {
         if (!token) return;
         let cancelled = false;
@@ -412,8 +471,95 @@ const Settings = () => {
                             Log out
                         </button>
                     </div>
+
+                    <div className="settings-card settings-card-danger">
+                        <div className="settings-card-head">
+                            <h3>Delete account</h3>
+                        </div>
+                        <p className="settings-card-hint">
+                            Permanently delete your account. All maps you created and their
+                            positions will also be deleted. This cannot be undone.
+                        </p>
+                        <button
+                            type="button"
+                            className="settings-danger"
+                            onClick={() => setDeleteOpen(true)}
+                        >
+                            Delete my account
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {deleteOpen ? (
+                <div
+                    className="settings-modal-backdrop"
+                    onClick={closeDeleteModal}
+                    role="presentation"
+                >
+                    <form
+                        className="settings-modal"
+                        onClick={(e) => e.stopPropagation()}
+                        onSubmit={handleDeleteAccount}
+                    >
+                        <h2>Delete your account?</h2>
+                        <p className="settings-modal-warning">
+                            This will <strong>permanently</strong> delete your account and
+                            <strong> every map you've created</strong>, including all of their
+                            positions. Players who saved your maps will lose access. This action
+                            cannot be undone.
+                        </p>
+
+                        {!isOAuthAccount && (
+                            <>
+                                <label htmlFor="delete-current-password">Current password</label>
+                                <input
+                                    type="password"
+                                    id="delete-current-password"
+                                    placeholder="Current password"
+                                    value={deletePassword}
+                                    onChange={(e) => setDeletePassword(e.target.value)}
+                                    autoComplete="current-password"
+                                />
+                            </>
+                        )}
+
+                        <label htmlFor="delete-confirm">Type DELETE to confirm</label>
+                        <input
+                            type="text"
+                            id="delete-confirm"
+                            placeholder="DELETE"
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            autoComplete="off"
+                        />
+
+                        {deleteMessage ? (
+                            <p className={`settings-message settings-message-${deleteMessage.kind}`}>
+                                {deleteMessage.text}
+                            </p>
+                        ) : null}
+
+                        <div className="settings-modal-actions">
+                            <button
+                                type="button"
+                                className="settings-ghost"
+                                onClick={closeDeleteModal}
+                                disabled={deleteSubmitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="settings-danger"
+                                disabled={deleteSubmitting}
+                            >
+                                {deleteSubmitting ? "Deleting..." : "Permanently delete"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            ) : null}
         </div>
     );
 };
